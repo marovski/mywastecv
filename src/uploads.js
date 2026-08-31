@@ -1,11 +1,8 @@
 // Upload de fotografias dos anúncios: multer em disco, apenas imagens, com limite.
 const path = require("node:path")
-const fs = require("node:fs")
 const crypto = require("node:crypto")
 const multer = require("multer")
-
-const UPLOAD_DIR = path.join(__dirname, "..", "public", "uploads", "listings")
-fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+const { LISTINGS_UPLOAD_DIR: UPLOAD_DIR } = require("./config")
 
 const ALLOWED = {
     "image/jpeg": ".jpg",

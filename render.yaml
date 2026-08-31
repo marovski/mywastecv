@@ -1,0 +1,34 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: painel do Render → New → Blueprint → ligar o repo marovski/mywastecv.
+services:
+  - type: web
+    name: mywaste
+    runtime: node
+    plan: free            # o plano free não tem disco persistente (ver nota abaixo)
+    region: frankfurt      # mais perto de Cabo Verde
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true   # o Render gera um segredo forte
+
+# --- Persistência dos dados (opcional, requer plano pago) -------------------
+# No plano free, a base de dados e as fotos ficam em ./var e são apagadas a
+# cada deploy. Para as manter, mude "plan: free" para "plan: starter" e
+# adicione, dentro do serviço:
+#
+#     disk:
+#       name: mywaste-data
+#       mountPath: /var/data
+#       sizeGB: 1
+#
+# e mais um envVar:
+#
+#       - key: DATA_DIR
+#         value: /var/data

@@ -26,13 +26,18 @@ Auth = email + password (`crypto.scrypt`), session in a signed cookie
 
 ```bash
 npm install
-npm start   # nodemon src/server.js
+npm run dev   # nodemon; `npm start` runs plain `node src/server.js` (used in prod)
 ```
 
 - `http://localhost:8001` (`PORT` env overrides). Requires **Node 22.5+**.
 - `SESSION_SECRET` env var in production (dev fallback constant otherwise).
-- No tests / build / lint. `src/database/database.db` and `public/uploads/` are
-  git-ignored and recreated on run.
+- `src/config.js` resolves `DATA_DIR` (default `./var`, git-ignored) → holds
+  `database.db` and `uploads/listings/`, both recreated on run. Set `DATA_DIR`
+  to a persistent volume in production.
+- `server.set("trust proxy", 1)` — needed for `secure` cookies behind Render's proxy.
+- `/uploads/*` is served from `<DATA_DIR>/uploads` (mounted before `public/`).
+- Deploy: `render.yaml` blueprint (free plan; see README for the persistent-disk upgrade).
+- No tests / build / lint.
 - **Seed accounts** (all password `mywaste123`): `admin@mywaste.cv` (admin);
   `reciclador1@mywaste.cv`…`reciclador4@mywaste.cv` (verified recyclers);
   `ana@exemplo.cv`, `joao@exemplo.cv` (citizens).
@@ -42,7 +47,8 @@ npm start   # nodemon src/server.js
 | file | role |
 |---|---|
 | `server.js` | all routes + inline `db.prepare()` queries (synchronous) |
-| `database/db.js` | opens SQLite, creates schema, seeds when empty |
+| `config.js` | resolves `DATA_DIR` → `DB_PATH`, `UPLOADS_DIR`, `LISTINGS_UPLOAD_DIR` |
+| `database/db.js` | opens SQLite at `DB_PATH`, creates schema, seeds when empty |
 | `password.js` | `hashPassword` / `verifyPassword` (scrypt, timing-safe) |
 | `auth.js` | `loadUser`, `attachUser`, `requireAuth`, `requireRole(...)`, login throttle |
 | `csrf.js` | `csrfToken` (per-session token → `res.locals`), `verifyCsrf` (checks `_csrf`) |
@@ -50,9 +56,10 @@ npm start   # nodemon src/server.js
 | `data/praia-zones.js` | Praia zones — dropdowns + validation |
 | `data/materials.js` | material list + `co2ePerKg` factors (indicative) |
 
-Middleware order in `server.js`: static → urlencoded → cookie-session →
-`attachUser` → `csrfToken` → template locals. Multipart routes run
-`listingPhoto` **before** `verifyCsrf` (so `req.body._csrf` is populated).
+Middleware order in `server.js`: `trust proxy` → `/uploads` static → `public`
+static → urlencoded → cookie-session → `attachUser` → `csrfToken` → template
+locals. Multipart routes run `listingPhoto` **before** `verifyCsrf` (so
+`req.body._csrf` is populated).
 
 ## Schema (`recyclers` table removed; DB is disposable)
 

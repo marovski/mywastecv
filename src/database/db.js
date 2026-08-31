@@ -2,8 +2,9 @@
 // sem dependências nativas para compilar.
 const { DatabaseSync } = require("node:sqlite")
 const { hashPassword } = require("../password")
+const { DB_PATH } = require("../config")
 
-const db = new DatabaseSync("./src/database/database.db")
+const db = new DatabaseSync(DB_PATH)
 db.exec(`PRAGMA foreign_keys = ON;`)
 
 module.exports = db

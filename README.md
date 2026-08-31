@@ -39,6 +39,29 @@ Contas de exemplo (password `mywaste123`): `admin@mywaste.cv`,
 
 Em produção, defina `SESSION_SECRET`.
 
+## Deploy (Render)
+
+O repositório inclui [`render.yaml`](render.yaml). No [Render](https://render.com):
+
+1. **New → Blueprint** e ligar o repositório `marovski/mywastecv`.
+2. Confirmar — o Render cria o serviço web (plano free, região Frankfurt) e
+   gera automaticamente o `SESSION_SECRET`.
+3. Abrir o URL `*.onrender.com`.
+
+**Persistência:** no plano free, a base de dados e as fotos vivem em `./var` e
+são apagadas a cada deploy (a app volta a semear os dados de exemplo). Para as
+manter, seguir a nota no fim do `render.yaml` (plano `starter` + disco +
+`DATA_DIR=/var/data`).
+
+### Variáveis de ambiente
+
+| Variável | Efeito |
+|---|---|
+| `PORT` | porta HTTP (o Render define-a) |
+| `SESSION_SECRET` | **obrigatória em produção** — assina o cookie de sessão |
+| `NODE_ENV=production` | ativa cookies `secure` (a app já usa `trust proxy`) |
+| `DATA_DIR` | pasta da base de dados + uploads (default `./var`) |
+
 ## Documentação
 
 Ver [`CLAUDE.md`](CLAUDE.md) para arquitetura, rotas, esquema da base de dados e

@@ -1,8 +1,12 @@
 {
   "name": "my-waste",
   "description": "My Waste — plataforma do movimento de reciclagem da Praia (Cantinho C / Global Shapers Praia Hub)",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
-    "start": "nodemon src/server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "dependencies": {
     "cookie-session": "^2.1.1",

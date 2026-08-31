@@ -1,8 +1,13 @@
+const path = require("node:path")
 const express = require("express")
 const cookieSession = require("cookie-session")
 const server = express()
 
+const { UPLOADS_DIR } = require("./config")
 const db = require("./database/db")
+
+// Atrás de um proxy (Render, etc.) para que req.secure / cookies "secure" funcionem.
+server.set("trust proxy", 1)
 const zones = require("./data/praia-zones")
 const { materials, labels: itemLabels, co2eByLabel } = require("./data/materials")
 const { hashPassword, verifyPassword } = require("./password")
@@ -23,7 +28,8 @@ const collaborators = [
 ]
 
 // --- Middleware base ----------------------------------------------------
-server.use(express.static("public"))
+server.use("/uploads", express.static(UPLOADS_DIR))
+server.use(express.static(path.join(__dirname, "..", "public")))
 server.use(express.urlencoded({ extended: true }))
 server.use(cookieSession({
     name: "mw_session",
@@ -37,7 +43,7 @@ server.use(attachUser)
 server.use(csrfToken)
 
 const nunjucks = require("nunjucks")
-nunjucks.configure("src/views", { express: server, noCache: true })
+nunjucks.configure(path.join(__dirname, "views"), { express: server, noCache: true })
 
 server.use((req, res, next) => {
     res.locals.collaborators = collaborators
