@@ -1,0 +1,10 @@
+<a class="card listing-card" href="/anuncios/{{ item.id }}">
+    {% if item.photo_path %}<img src="{{ item.photo_path }}" alt="">{% endif %}
+    <h3>{{ item.items }}</h3>
+    <p class="meta">
+        {{ item.zone }}
+        {% if item.quantity_kg_est %} · ~{{ item.quantity_kg_est }} kg{% endif %}
+    </p>
+    {% if item.note %}<p>{{ item.note | truncate(120) }}</p>{% endif %}
+    <span class="badge badge-{{ item.status }}">{{ item.status }}</span>
+</a>

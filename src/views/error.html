@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-error" %}
+
+{% block title %}<title>Erro — My Waste</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/content-page.css">
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <header class="page-head">
+            <h1>Ups…</h1>
+            <p>{{ message or "Ocorreu um erro inesperado." }}</p>
+        </header>
+        <p><a href="/">Voltar à página inicial</a></p>
+    </main>
+{% endblock content %}

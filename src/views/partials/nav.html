@@ -1,0 +1,25 @@
+<nav class="site-nav">
+    <a class="brand" href="/">
+        <img src="/assets/icones/logo.svg" alt="My Waste">
+    </a>
+    <ul>
+        <li><a href="/recicladores" class="{{ 'active' if currentPath.startsWith('/recicladores') }}">Recicladores</a></li>
+        <li><a href="/workshops" class="{{ 'active' if currentPath.startsWith('/workshops') }}">Workshops</a></li>
+        <li><a href="/impacto" class="{{ 'active' if currentPath == '/impacto' }}">Impacto</a></li>
+        <li><a href="/projeto" class="{{ 'active' if currentPath == '/projeto' }}">Projeto</a></li>
+        {% if currentUser %}
+            {% if currentUser.role == 'admin' %}
+                <li><a href="/admin" class="{{ 'active' if currentPath == '/admin' }}">Admin</a></li>
+            {% else %}
+                <li><a href="/painel" class="{{ 'active' if currentPath.startsWith('/painel') or currentPath.startsWith('/anuncios') or currentPath == '/perfil' }}">Painel</a></li>
+            {% endif %}
+            <li class="nav-user">
+                <span>{{ currentUser.name }}</span>
+                <form action="/sair" method="POST">{% include "partials/csrf.html" %}<button type="submit">Sair</button></form>
+            </li>
+        {% else %}
+            <li><a href="/entrar" class="{{ 'active' if currentPath == '/entrar' }}">Entrar</a></li>
+            <li><a href="/registar" class="nav-cta">Registar</a></li>
+        {% endif %}
+    </ul>
+</nav>

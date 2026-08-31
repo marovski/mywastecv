@@ -1,0 +1,66 @@
+/* Formulários de autenticação e de perfil */
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+}
+.auth-form label { margin: 16px 0 6px; font-weight: 700; color: var(--title-color); }
+.auth-form label.check {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+    margin: 6px 0;
+    display: flex;
+}
+.auth-form input[type="text"],
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="url"],
+.auth-form input[type="number"],
+.auth-form input[type="date"],
+.auth-form input[type="file"],
+.auth-form select,
+.auth-form textarea {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: inherit;
+}
+.auth-form fieldset {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+.auth-form legend { font-weight: 700; color: var(--title-color); padding: 0 6px; }
+.auth-form button {
+    margin-top: 24px;
+    align-self: flex-start;
+    background: var(--primary-color);
+    color: #fff;
+    font-weight: 700;
+    border: 0;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.auth-form button:hover { background: var(--primary-dark); }
+
+.role-picker { display: flex; flex-direction: column; gap: 8px; }
+.role-picker label {
+    border: 2px solid #eee;
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 0;
+    font-weight: 400;
+}
+.role-picker label.on { border-color: var(--primary-color); background: #e1faec; }

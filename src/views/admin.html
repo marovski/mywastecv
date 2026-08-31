@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Admin — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Verificação de recicladores</h1>
+            <p>Aprovar recicladores para que possam reivindicar anúncios e aparecer no diretório público.</p>
+        </header>
+
+        <h2>Por verificar ({{ pending.length }})</h2>
+        {% if pending.length == 0 %}
+            <p>Nada pendente.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Nome</th><th>Email</th><th>Zonas</th><th>Materiais</th><th></th></tr></thead>
+                <tbody>
+                {% for r in pending %}
+                    <tr>
+                        <td>{{ r.org_name or r.name }}</td>
+                        <td>{{ r.email }}</td>
+                        <td>{{ r.service_zones or "—" }}</td>
+                        <td>{{ r.accepted_items or "—" }}</td>
+                        <td>
+                            <form action="/admin/recicladores/{{ r.id }}/verificar" method="POST">
+                                {% include "partials/csrf.html" %}
+                                <button type="submit">Verificar</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <h2>Verificados ({{ verified.length }})</h2>
+        <table class="data-table">
+            <thead><tr><th>Nome</th><th>Email</th><th>Desde</th></tr></thead>
+            <tbody>
+            {% for r in verified %}
+                <tr><td>{{ r.name }}</td><td>{{ r.email }}</td><td>{{ r.verified_at }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </main>
+{% endblock content %}

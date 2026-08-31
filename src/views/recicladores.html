@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-search-results" %}
+
+{% block title %}<title>Recicladores na Praia — My Waste</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/recicladores.css">
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Recicladores da Praia</h1>
+            <p>Entidades verificadas que recolhem ou recebem materiais recicláveis. Es reciclador? <a href="/registar?role=reciclador">Registe-se</a>.</p>
+        </header>
+
+        <form class="zone-filter" action="/recicladores" method="GET">
+            <label for="zone">Zona da Praia</label>
+            <select name="zone" id="zone" onchange="this.form.submit()">
+                <option value="">Todas as zonas</option>
+                {% for z in zones %}
+                    <option value="{{ z }}" {{ 'selected' if zone == z }}>{{ z }}</option>
+                {% endfor %}
+            </select>
+            <noscript><button type="submit">Filtrar</button></noscript>
+        </form>
+
+        {% if total > 0 %}
+            <h4><strong>{{ total }}</strong> reciclador{{ 'es' if total != 1 }} encontrado{{ 's' if total != 1 }}</h4>
+
+            <div class="cards">
+                {% for place in recyclers %}
+                    <div class="card">
+                        {% if place.image %}<img src="{{ place.image }}" alt="{{ place.org_name }}">{% endif %}
+                        <h1>{{ place.org_name or place.name }}</h1>
+                        <h3>{{ place.accepted_items }}</h3>
+                        <p>
+                            {% if place.description %}{{ place.description }}<br>{% endif %}
+                            <strong>Zonas:</strong> {{ place.service_zones }}<br>
+                            {% if place.hours %}<strong>Horário:</strong> {{ place.hours }}<br>{% endif %}
+                            {% if place.does_pickup %}Faz recolha{% endif %}{% if place.does_pickup and place.does_dropoff %} · {% endif %}{% if place.does_dropoff %}Aceita entregas{% endif %}
+                        </p>
+                        {% if place.phone %}
+                            <a class="contact" href="https://wa.me/{{ place.phone | replace(' ', '') }}" target="_blank" rel="noopener">Contactar</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h4>Nenhum reciclador encontrado{% if zone %} na zona <strong>{{ zone }}</strong>{% endif %}.</h4>
+        {% endif %}
+    </main>
+
+{% endblock content %}

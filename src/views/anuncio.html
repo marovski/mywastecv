@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Anúncio — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <p><a href="{{ '/painel' if isOwner else '/anuncios' }}">&larr; Voltar</a></p>
+
+        <header class="page-head">
+            <h1>{{ listing.items }}</h1>
+            <p class="meta">
+                {{ listing.zone }}
+                {% if listing.quantity_kg_est %} · ~{{ listing.quantity_kg_est }} kg{% endif %}
+                · <span class="badge badge-{{ listing.status }}">{{ listing.status }}</span>
+            </p>
+        </header>
+
+        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+
+        {% if listing.photo_path %}<img class="listing-photo" src="{{ listing.photo_path }}" alt="">{% endif %}
+        {% if listing.note %}<p>{{ listing.note }}</p>{% endif %}
+        {% if listing.available_until %}<p><strong>Disponível até:</strong> {{ listing.available_until }}</p>{% endif %}
+
+        {% if canSeeContact %}
+            <div class="notice success">
+                <strong>Contacto</strong><br>
+                {{ listing.citizen_name }}<br>
+                {% if listing.address %}{{ listing.address }} ({{ listing.zone }})<br>{% endif %}
+                {% if listing.citizen_phone %}
+                    <a href="https://wa.me/{{ listing.citizen_phone | replace(' ', '') }}" target="_blank" rel="noopener">WhatsApp {{ listing.citizen_phone }}</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="muted">A morada e o contacto são revelados ao reciclador assim que o cidadão aceitar o pedido.</p>
+        {% endif %}
+
+        {# --- Recolha concluída --- #}
+        {% if collection %}
+            <h2>Recolha concluída</h2>
+            <ul>
+                {% for label, kg in collection.weights %}<li>{{ label }}: {{ kg }} kg</li>{% endfor %}
+            </ul>
+            <p class="muted">Registada em {{ collection.collected_at }}.</p>
+        {% endif %}
+
+        {# --- Ações do cidadão (dono) --- #}
+        {% if isOwner %}
+            <h2>Pedidos de recicladores</h2>
+            {% if claims.length == 0 %}
+                <p>Ainda não há pedidos.</p>
+            {% else %}
+                {% for c in claims %}
+                    <div class="claim">
+                        <p>
+                            <strong>{{ c.recycler_name }}</strong>
+                            {% if c.verified_at %}<span class="badge badge-aceite">Selo Cantinho C</span>{% endif %}
+                            <span class="badge badge-{{ c.status }}">{{ c.status }}</span>
+                        </p>
+                        {% if c.message %}<p>“{{ c.message }}”</p>{% endif %}
+                        {% if c.status == 'aceite' %}
+                            <p><a href="https://wa.me/{{ c.recycler_phone | replace(' ', '') }}" target="_blank" rel="noopener">WhatsApp {{ c.recycler_phone }}</a>
+                            {% if c.recycler_address %}· {{ c.recycler_address }}{% endif %}</p>
+                        {% elif c.status == 'pendente' and listing.status == 'aberta' %}
+                            <form action="/anuncios/{{ listing.id }}/claims/{{ c.id }}/aceitar" method="POST">
+                                {% include "partials/csrf.html" %}
+                                <button type="submit">Aceitar este reciclador</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="owner-actions">
+                {% if listing.status == 'reservada' and not collection %}
+                    <a class="btn" href="/anuncios/{{ listing.id }}/concluir">Confirmar recolha</a>
+                {% endif %}
+                {% if listing.status in ['aberta', 'reservada'] %}
+                    <form action="/anuncios/{{ listing.id }}/expirar" method="POST">
+                        {% include "partials/csrf.html" %}
+                        <button type="submit" class="btn btn-ghost">Retirar anúncio</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# --- Ações do reciclador --- #}
+        {% if currentUser.role == 'reciclador' and not isOwner %}
+            {% if myClaim %}
+                <div class="notice">
+                    O seu pedido está <strong>{{ myClaim.status }}</strong>.
+                    {% if myClaim.status in ['pendente', 'aceite'] %}
+                        <form action="/claims/{{ myClaim.id }}/retirar" method="POST">
+                            {% include "partials/csrf.html" %}
+                            <button type="submit" class="btn btn-ghost">Retirar pedido</button>
+                        </form>
+                    {% endif %}
+                </div>
+                {% if myClaim.status == 'aceite' and listing.status == 'reservada' and not collection %}
+                    <a class="btn" href="/anuncios/{{ listing.id }}/concluir">Confirmar recolha</a>
+                {% endif %}
+            {% elif listing.status == 'aberta' %}
+                <h2>Tenho interesse</h2>
+                <form action="/anuncios/{{ listing.id }}/reivindicar" method="POST" class="auth-form">
+                    {% include "partials/csrf.html" %}
+                    <label for="message">Mensagem para o cidadão (opcional)</label>
+                    <textarea name="message" id="message" rows="2"></textarea>
+                    <button type="submit">Reivindicar anúncio</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </main>
+{% endblock content %}

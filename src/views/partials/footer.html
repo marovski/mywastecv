@@ -1,0 +1,16 @@
+<footer class="site-footer">
+    <div class="site-footer-inner">
+        <div>
+            <strong>My Waste</strong>
+            <p>Um projeto Cantinho C, em parceria com o Global Shapers Praia Hub.</p>
+        </div>
+        <div>
+            <span>Colaboradores</span>
+            <ul>
+                {% for name in collaborators %}
+                    <li>{{ name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</footer>

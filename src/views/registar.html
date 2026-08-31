@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% set pageId = "page-auth" %}
+{% block title %}<title>Criar conta — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/auth.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <header class="page-head">
+            <h1>Criar conta</h1>
+            <p>Junte-se ao movimento de reciclagem da Praia.</p>
+        </header>
+
+        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+
+        <form action="/registar" method="POST" class="auth-form">
+            {% include "partials/csrf.html" %}
+
+            <fieldset class="role-picker">
+                <label class="{{ 'on' if (values.role or role) != 'reciclador' }}">
+                    <input type="radio" name="role" value="cidadao" {{ 'checked' if (values.role or role) != 'reciclador' }}>
+                    Sou cidadão — tenho materiais para reciclar
+                </label>
+                <label class="{{ 'on' if (values.role or role) == 'reciclador' }}">
+                    <input type="radio" name="role" value="reciclador" {{ 'checked' if (values.role or role) == 'reciclador' }}>
+                    Sou reciclador — recolho / trato materiais
+                </label>
+            </fieldset>
+
+            <label for="name">Nome</label>
+            <input type="text" name="name" id="name" value="{{ values.name }}" required>
+
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" value="{{ values.email }}" required>
+
+            <label for="phone">Telefone / WhatsApp</label>
+            <input type="text" name="phone" id="phone" value="{{ values.phone }}" placeholder="238 000 00 00">
+
+            <label for="zone">Zona da Praia</label>
+            <select name="zone" id="zone" required>
+                <option value="">Selecione a zona</option>
+                {% for z in zones %}<option value="{{ z }}" {{ 'selected' if values.zone == z }}>{{ z }}</option>{% endfor %}
+            </select>
+
+            <label for="password">Password (mín. 8 caracteres)</label>
+            <input type="password" name="password" id="password" required>
+
+            <label for="password2">Confirmar password</label>
+            <input type="password" name="password2" id="password2" required>
+
+            <button type="submit">Criar conta</button>
+        </form>
+
+        <p>Já tem conta? <a href="/entrar">Entrar</a></p>
+    </main>
+{% endblock content %}

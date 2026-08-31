@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Confirmar recolha — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <p><a href="/anuncios/{{ listing.id }}">&larr; Voltar ao anúncio</a></p>
+
+        <header class="page-head">
+            <h1>Confirmar recolha</h1>
+            <p>Indique o peso efetivamente recolhido de cada material. Estes valores alimentam o painel de impacto.</p>
+        </header>
+
+        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+
+        <form action="/anuncios/{{ listing.id }}/concluir" method="POST" class="auth-form">
+            {% include "partials/csrf.html" %}
+
+            {% set anunciados = listing.items.split(",") %}
+            {% for m in materials %}
+                <label for="w-{{ loop.index }}">
+                    {{ m.label }}{% if m.label in anunciados %} <span class="muted">(anunciado)</span>{% endif %} — kg
+                </label>
+                <input type="number" id="w-{{ loop.index }}" name="weight_{{ m.label }}" min="0" step="0.1" value="0">
+            {% endfor %}
+
+            <button type="submit">Registar recolha</button>
+        </form>
+    </main>
+{% endblock content %}

@@ -1,0 +1,104 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+:root {
+    --title-color: #322153;
+    --primary-color: #34cb59;
+    --primary-dark: #2fb86e;
+    --text-color: #6c6c80;
+}
+
+html { font-family: Roboto, sans-serif; }
+
+body {
+    background: #f0f0f5;
+    -webkit-font-smoothing: antialiased;
+    color: var(--text-color);
+}
+
+a { text-decoration: none; }
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--title-color);
+    font-family: 'Ubuntu', sans-serif;
+}
+
+/* --- Navegação partilhada --------------------------------------------- */
+.site-nav {
+    width: 90%;
+    max-width: 1100px;
+    margin: 32px auto 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.site-nav .brand img { height: 42px; }
+.site-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.site-nav a {
+    color: var(--title-color);
+    font-weight: 700;
+}
+.site-nav a.active { color: var(--primary-color); }
+.site-nav a.nav-cta {
+    background: var(--primary-color);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+.site-nav .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.site-nav .nav-user span { color: var(--text-color); font-weight: 400; }
+.site-nav .nav-user form { display: inline; }
+.site-nav .nav-user button {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font: inherit;
+    font-weight: 700;
+    color: var(--title-color);
+    cursor: pointer;
+}
+
+/* --- Rodapé partilhado ----------------------------------------------- */
+.site-footer {
+    background: #322153;
+    color: #fff;
+    margin-top: 64px;
+}
+.site-footer-inner {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: space-between;
+}
+.site-footer strong { color: #fff; font-family: 'Ubuntu', sans-serif; font-size: 20px; }
+.site-footer p { margin-top: 8px; max-width: 360px; color: #d9d5e6; }
+.site-footer span { display: block; margin-bottom: 8px; font-weight: 700; }
+.site-footer ul { list-style: none; }
+.site-footer li { color: #d9d5e6; line-height: 1.8; }
+
+/* --- Utilidades ------------------------------------------------------- */
+.form-errors {
+    background: #ffe8e8;
+    color: #a12a2a;
+    border-radius: 8px;
+    padding: 16px 24px 16px 40px;
+    margin: 24px 0;
+}

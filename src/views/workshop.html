@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-workshop" %}
+
+{% block title %}<title>{{ workshop.title }} — My Waste</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/content-page.css">
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <p><a href="/workshops">&larr; Todos os workshops</a></p>
+
+        <header class="page-head">
+            <h1>{{ workshop.title }}</h1>
+            <p class="meta">{{ workshop.date }}{% if workshop.zone %} · {{ workshop.zone }}{% endif %}</p>
+        </header>
+
+        <p>{{ workshop.description }}</p>
+
+        {% if saved %}
+            <div class="notice success">Inscrição confirmada. Até já!</div>
+        {% endif %}
+
+        {% if errors %}
+            <ul class="form-errors">
+                {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if spotsLeft > 0 %}
+            <h2>Inscrever-me</h2>
+            <p>{{ spotsLeft }} vaga{{ 's' if spotsLeft != 1 }} disponíve{{ 'is' if spotsLeft != 1 else 'l' }}.</p>
+            <form action="/workshops/{{ workshop.id }}/inscrever" method="POST" class="signup-form">
+                {% include "partials/csrf.html" %}
+                {% if currentUser %}
+                    <p>Inscrição como <strong>{{ currentUser.name }}</strong> ({{ currentUser.email }}).</p>
+                {% else %}
+                    <label for="name">Nome</label>
+                    <input type="text" name="name" id="name" value="{{ values.name }}" required>
+
+                    <label for="email">Email</label>
+                    <input type="email" name="email" id="email" value="{{ values.email }}" required>
+
+                    <label for="phone">Telefone (opcional)</label>
+                    <input type="text" name="phone" id="phone" value="{{ values.phone }}">
+                {% endif %}
+
+                <button type="submit">Confirmar inscrição</button>
+            </form>
+        {% else %}
+            <div class="notice">Este workshop está lotado.</div>
+        {% endif %}
+    </main>
+{% endblock content %}

@@ -1,0 +1,5 @@
+node_modules/
+src/database/database.db
+.DS_Store
+npm-debug.log*
+public/uploads/

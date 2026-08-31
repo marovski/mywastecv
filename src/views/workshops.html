@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-workshops" %}
+
+{% block title %}<title>Workshops — My Waste</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/content-page.css">
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Workshops</h1>
+            <p>Acções de formação para aprender a separar, reduzir e encaminhar resíduos na Praia.</p>
+        </header>
+
+        <h2>Próximos</h2>
+        {% if upcoming.length > 0 %}
+            <div class="cards">
+                {% for w in upcoming %}
+                    <a class="card" href="/workshops/{{ w.id }}">
+                        <h3>{{ w.title }}</h3>
+                        <p class="meta">{{ w.date }}{% if w.zone %} · {{ w.zone }}{% endif %}</p>
+                        <p>{{ w.description }}</p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Ainda não há workshops agendados. Volte em breve.</p>
+        {% endif %}
+
+        {% if past.length > 0 %}
+            <h2>Realizados</h2>
+            <div class="cards">
+                {% for w in past %}
+                    <div class="card past">
+                        <h3>{{ w.title }}</h3>
+                        <p class="meta">{{ w.date }}{% if w.zone %} · {{ w.zone }}{% endif %}</p>
+                        <p>{{ w.description }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </main>
+{% endblock content %}

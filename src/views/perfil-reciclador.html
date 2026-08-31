@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Perfil do reciclador — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <header class="page-head">
+            <h1>Perfil do reciclador</h1>
+            <p>Estes dados definem que anúncios lhe são mostrados e o que os cidadãos veem sobre si.</p>
+        </header>
+
+        <form action="/perfil" method="POST" class="auth-form">
+            {% include "partials/csrf.html" %}
+
+            <label for="org_name">Nome / organização</label>
+            <input type="text" name="org_name" id="org_name" value="{{ profile.org_name }}">
+
+            <label for="description">Descrição</label>
+            <textarea name="description" id="description" rows="3">{{ profile.description }}</textarea>
+
+            <fieldset>
+                <legend>Materiais que aceita</legend>
+                {% set accepted = (profile.accepted_items or "").split(",") %}
+                {% for m in materials %}
+                    <label class="check"><input type="checkbox" name="accepted_items" value="{{ m.label }}" {{ 'checked' if m.label in accepted }}> {{ m.label }}</label>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset>
+                <legend>Zonas onde opera</legend>
+                {% set svc = (profile.service_zones or "").split(",") %}
+                {% for z in zones %}
+                    <label class="check"><input type="checkbox" name="service_zones" value="{{ z }}" {{ 'checked' if z in svc }}> {{ z }}</label>
+                {% endfor %}
+            </fieldset>
+
+            <label class="check"><input type="checkbox" name="does_pickup" value="1" {{ 'checked' if profile.does_pickup }}> Faz recolha ao domicílio</label>
+            <label class="check"><input type="checkbox" name="does_dropoff" value="1" {{ 'checked' if profile.does_dropoff }}> Aceita entregas no seu ponto</label>
+
+            <label for="hours">Horário</label>
+            <input type="text" name="hours" id="hours" value="{{ profile.hours }}" placeholder="Seg-Sex 08:00-16:00">
+
+            <label for="address">Morada do ponto</label>
+            <input type="text" name="address" id="address" value="{{ profile.address }}">
+
+            <label for="image">Imagem (URL)</label>
+            <input type="url" name="image" id="image" value="{{ profile.image }}" placeholder="https://">
+
+            <button type="submit">Guardar perfil</button>
+        </form>
+    </main>
+{% endblock content %}

@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Novo anúncio — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <header class="page-head">
+            <h1>Publicar materiais</h1>
+            <p>Descreva o que tem para reciclar. A morada exata só é partilhada com o reciclador que aceitar.</p>
+        </header>
+
+        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+
+        <form action="/anuncios/novo" method="POST" enctype="multipart/form-data" class="auth-form">
+            {% include "partials/csrf.html" %}
+
+            <fieldset>
+                <legend>Materiais</legend>
+                {% for m in materials %}
+                    <label class="check"><input type="checkbox" name="items" value="{{ m.label }}"> {{ m.label }}</label>
+                {% endfor %}
+            </fieldset>
+
+            <label for="quantity_kg_est">Quantidade estimada (kg)</label>
+            <input type="number" name="quantity_kg_est" id="quantity_kg_est" min="0" step="0.5" value="{{ values.quantity_kg_est }}">
+
+            <label for="zone">Zona da Praia</label>
+            <select name="zone" id="zone" required>
+                <option value="">Selecione a zona</option>
+                {% for z in zones %}<option value="{{ z }}" {{ 'selected' if values.zone == z }}>{{ z }}</option>{% endfor %}
+            </select>
+
+            <label for="address">Morada (privada — só visível após aceitar um reciclador)</label>
+            <input type="text" name="address" id="address" value="{{ values.address }}">
+
+            <label for="available_until">Disponível até (opcional)</label>
+            <input type="date" name="available_until" id="available_until" value="{{ values.available_until }}">
+
+            <label for="note">Notas</label>
+            <textarea name="note" id="note" rows="3">{{ values.note }}</textarea>
+
+            <label for="photo">Fotografia (JPG/PNG/WEBP, máx. 3 MB)</label>
+            <input type="file" name="photo" id="photo" accept="image/jpeg,image/png,image/webp">
+
+            <button type="submit">Publicar anúncio</button>
+        </form>
+    </main>
+{% endblock content %}

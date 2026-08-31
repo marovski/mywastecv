@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Painel — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Painel do reciclador</h1>
+            {% if not profile.verified_at %}
+                <div class="notice">A sua conta está <strong>por verificar</strong>. A equipa My Waste irá validar o seu perfil antes de poder reivindicar anúncios.</div>
+            {% endif %}
+            <a class="btn" href="/anuncios">Ver anúncios disponíveis</a>
+            <a class="btn btn-ghost" href="/perfil">Editar perfil</a>
+        </header>
+
+        <h2>Perfil</h2>
+        <p>
+            <strong>{{ profile.org_name }}</strong><br>
+            Materiais: {{ profile.accepted_items or "—" }}<br>
+            Zonas: {{ profile.service_zones or "—" }}<br>
+            {% if profile.does_pickup %}Faz recolha{% endif %}{% if profile.does_dropoff %} · Aceita entregas{% endif %}
+        </p>
+
+        <h2>Os meus pedidos</h2>
+        {% if claims.length == 0 %}
+            <p>Ainda não reivindicou nenhum anúncio.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Materiais</th><th>Zona</th><th>Estado do pedido</th><th></th></tr></thead>
+                <tbody>
+                {% for c in claims %}
+                    <tr>
+                        <td>{{ c.items }}</td>
+                        <td>{{ c.zone }}</td>
+                        <td><span class="badge badge-{{ c.status }}">{{ c.status }}</span></td>
+                        <td><a href="/anuncios/{{ c.listing_id }}">abrir</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <h2>Recolhas concluídas</h2>
+        <p>{{ collections.length }} recolha(s) registada(s).</p>
+    </main>
+{% endblock content %}

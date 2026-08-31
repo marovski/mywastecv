@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Painel — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Os meus anúncios</h1>
+            <p>Publique os materiais que tem para reciclar e receba pedidos de recicladores.</p>
+            <a class="btn" href="/anuncios/novo">+ Novo anúncio</a>
+        </header>
+
+        {% if listings.length == 0 %}
+            <p>Ainda não publicou nenhum anúncio.</p>
+        {% else %}
+            <div class="cards">
+                {% for item in listings %}
+                    <a class="card listing-card" href="/anuncios/{{ item.id }}">
+                        {% if item.photo_path %}<img src="{{ item.photo_path }}" alt="">{% endif %}
+                        <h3>{{ item.items }}</h3>
+                        <p class="meta">{{ item.zone }}{% if item.quantity_kg_est %} · ~{{ item.quantity_kg_est }} kg{% endif %}</p>
+                        <span class="badge badge-{{ item.status }}">{{ item.status }}</span>
+                        {% if item.pending_claims > 0 and item.status == 'aberta' %}
+                            <span class="badge badge-alert">{{ item.pending_claims }} pedido(s)</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </main>
+{% endblock content %}

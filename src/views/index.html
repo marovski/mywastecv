@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-home" %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="/styles/modal.css">
+{% endblock styles %}
+
+{% block content %}
+    <div class="content">
+
+        <header>
+            <img src="/assets/icones/logo.svg" alt="My Waste">
+            <nav>
+                <a href="/recicladores">Recicladores</a>
+                <a href="/workshops">Workshops</a>
+                <a href="/impacto">Impacto</a>
+                <a href="/projeto">Projeto</a>
+                {% if currentUser %}
+                    <a href="{{ '/admin' if currentUser.role == 'admin' else '/painel' }}" class="cta"><span></span> Painel</a>
+                {% else %}
+                    <a href="/entrar" class="cta"><span></span> Entrar</a>
+                {% endif %}
+            </nav>
+        </header>
+
+        <main>
+            <h1>Um movimento de reciclagem para a Praia</h1>
+            <p>
+                O My Waste liga quem tem materiais recicláveis a quem os recolhe, e
+                forma cidadãos em workshops sobre gestão de resíduos.
+            </p>
+
+            <div class="home-cta">
+                <a href="/registar?role=cidadao" class="primary"><strong>Tenho materiais para reciclar</strong></a>
+                <a href="/registar?role=reciclador" class="secondary"><strong>Sou reciclador</strong></a>
+            </div>
+            <p class="home-secondary"><a href="#" id="open-search">Ou pesquise os recicladores da sua zona &rarr;</a></p>
+        </main>
+
+    </div>
+{% endblock content %}
+
+{% block modal %}
+    {% include "partials/modal.html" %}
+{% endblock modal %}
+
+{% block scripts %}
+    <script src="/scripts/home.js"></script>
+{% endblock scripts %}

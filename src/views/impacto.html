@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-impacto" %}
+
+{% block title %}<title>Impacto — My Waste</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/content-page.css">
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Impacto</h1>
+            <p>Metas mensuráveis do movimento de reciclagem na Praia (objetivo: mudança sustentada ao longo de 2 anos).</p>
+        </header>
+
+        <div class="stat-grid">
+            <div class="stat">
+                <strong>{{ metrics.workshops }}</strong>
+                <span>Workshops realizados</span>
+            </div>
+            <div class="stat">
+                <strong>{{ metrics.flows }}</strong>
+                <span>Fluxos de reciclagem criados</span>
+            </div>
+            <div class="stat">
+                <strong>{{ metrics.recyclers }}</strong>
+                <span>Recicladores mobilizados</span>
+            </div>
+            <div class="stat">
+                <strong>{{ metrics.citizens }}</strong>
+                <span>Cidadãos envolvidos</span>
+            </div>
+            <div class="stat">
+                <strong>{{ metrics.kg }}</strong>
+                <span>kg de resíduos desviados</span>
+            </div>
+            <div class="stat">
+                <strong>{{ metrics.co2e }}</strong>
+                <span>kg CO₂e evitados (estimativa)</span>
+            </div>
+        </div>
+
+        <p class="footnote">
+            Calculado a partir das recolhas confirmadas na plataforma e das
+            inscrições em workshops. Os fatores de CO₂e são indicativos e serão
+            afinados com a Quercus Cabo Verde.
+        </p>
+    </main>
+{% endblock content %}

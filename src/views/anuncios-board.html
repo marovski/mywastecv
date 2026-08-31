@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>Anúncios disponíveis — My Waste</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Anúncios disponíveis</h1>
+            <p>
+                {% if showAll %}
+                    A mostrar todos os anúncios abertos. <a href="/anuncios">Filtrar pelo meu perfil</a>
+                {% else %}
+                    Filtrado pelas suas zonas e materiais. <a href="/anuncios?todos=1">Ver todos</a>
+                {% endif %}
+            </p>
+        </header>
+
+        {% if listings.length == 0 %}
+            <p>Nenhum anúncio corresponde ao seu perfil neste momento.</p>
+        {% else %}
+            <div class="cards">
+                {% for item in listings %}
+                    <a class="card listing-card" href="/anuncios/{{ item.id }}">
+                        {% if item.photo_path %}<img src="{{ item.photo_path }}" alt="">{% endif %}
+                        <h3>{{ item.items }}</h3>
+                        <p class="meta">{{ item.zone }}{% if item.quantity_kg_est %} · ~{{ item.quantity_kg_est }} kg{% endif %}</p>
+                        {% if item.note %}<p>{{ item.note | truncate(120) }}</p>{% endif %}
+                        {% if item.id in claimed %}<span class="badge badge-aceite">já reivindicado por si</span>{% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </main>
+{% endblock content %}

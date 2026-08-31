@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-projeto" %}
+
+{% block title %}<title>O Projeto — My Waste</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/content-page.css">
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="narrow">
+        <header class="page-head">
+            <h1>O Projeto My Waste</h1>
+            <p>Global Shapers Hub — Praia · Área de impacto: Alterações Climáticas &amp; Sustentabilidade · Gestão de Resíduos</p>
+        </header>
+
+        <section>
+            <h2>O problema</h2>
+            <p>
+                Fraca gestão pública de resíduos e falta de conhecimento sobre
+                métodos de reciclagem e sobre os recicladores existentes na Praia.
+            </p>
+        </section>
+
+        <section>
+            <h2>A nossa solução</h2>
+            <p>
+                Realizamos workshops para ensinar e informar os cidadãos sobre a
+                importância da gestão de resíduos e os métodos de reciclagem, e
+                ligamos os recicladores aos cidadãos através de plataformas
+                digitais (website e redes sociais).
+            </p>
+        </section>
+
+        <section>
+            <h2>Impacto desejado</h2>
+            <p>
+                Uma mudança sustentada ao nível da comunidade, desenvolvendo um
+                movimento de reciclagem na Praia nos próximos 2 anos.
+            </p>
+        </section>
+
+        <section>
+            <h2>Cronograma</h2>
+            <ul>
+                <li>Criação das plataformas digitais</li>
+                <li>Identificação dos recicladores</li>
+                <li>Estruturação dos workshops</li>
+                <li>Próximo passo: plano de ação</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Metas mensuráveis</h2>
+            <ul>
+                <li>N.º de workshops realizados</li>
+                <li>N.º de fluxos de reciclagem criados</li>
+                <li>N.º de recicladores mobilizados</li>
+                <li>N.º de cidadãos envolvidos na reciclagem</li>
+            </ul>
+            <p><a href="/impacto">Ver o progresso &rarr;</a></p>
+        </section>
+
+        <section>
+            <h2>Colaboradores</h2>
+            <ul>
+                {% for name in collaborators %}<li>{{ name }}</li>{% endfor %}
+            </ul>
+            <p>Projeto promovido pela Cantinho C, em parceria com o Global Shapers Praia Hub.</p>
+        </section>
+    </main>
+{% endblock content %}
