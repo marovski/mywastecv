@@ -6,8 +6,18 @@ const server = express()
 const { UPLOADS_DIR } = require("./config")
 const db = require("./database/db")
 
+const isProd = process.env.NODE_ENV === "production"
+
 // Atrás de um proxy (Render, etc.) para que req.secure / cookies "secure" funcionem.
 server.set("trust proxy", 1)
+
+// Não deixar o processo morrer por um erro isolado num pedido.
+process.on("uncaughtException", (err) => console.error("uncaughtException:", err))
+process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err))
+
+// Health check leve para o Render (não depende de templates nem da BD).
+server.get("/healthz", (req, res) => res.type("text").send("ok"))
+
 const zones = require("./data/praia-zones")
 const { materials, labels: itemLabels, co2eByLabel } = require("./data/materials")
 const { hashPassword, verifyPassword } = require("./password")
@@ -43,7 +53,7 @@ server.use(attachUser)
 server.use(csrfToken)
 
 const nunjucks = require("nunjucks")
-nunjucks.configure(path.join(__dirname, "views"), { express: server, noCache: true })
+nunjucks.configure(path.join(__dirname, "views"), { express: server, noCache: !isProd })
 
 server.use((req, res, next) => {
     res.locals.collaborators = collaborators
@@ -653,4 +663,5 @@ server.get("/impacto", (req, res) => {
     }
 })
 
-server.listen(process.env.PORT || 8001)
+const PORT = process.env.PORT || 8001
+server.listen(PORT, () => console.log(`My Waste a correr na porta ${PORT}`))
