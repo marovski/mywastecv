@@ -2,7 +2,7 @@
 
 ## Overview
 
-**My Waste** — a two-sided platform for the *My Waste* project (company **Cantinho C**
+**Nôs Lixu** — a two-sided platform for the *Nôs Lixu* project (company **Cantinho C**
 with the **Global Shapers Praia Hub**), supporting a recycling movement in **Praia,
 Cabo Verde**:
 
@@ -38,8 +38,8 @@ npm run dev   # nodemon; `npm start` runs plain `node src/server.js` (used in pr
 - `/uploads/*` is served from `<DATA_DIR>/uploads` (mounted before `public/`).
 - Deploy: `render.yaml` blueprint (free plan; see README for the persistent-disk upgrade).
 - No tests / build / lint.
-- **Seed accounts** (all password `mywaste123`): `admin@mywaste.cv` (admin);
-  `reciclador1@mywaste.cv`…`reciclador4@mywaste.cv` (verified recyclers);
+- **Seed accounts** (all password `noslixu123`): `admin@noslixu.cv` (admin);
+  `reciclador1@noslixu.cv`…`reciclador4@noslixu.cv` (verified recyclers);
   `ana@exemplo.cv`, `joao@exemplo.cv` (citizens).
 
 ## Backend modules (`src/`)

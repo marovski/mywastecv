@@ -99,11 +99,11 @@ db.exec(`
 seedIfEmpty()
 
 // --- Dados de exemplo (apenas quando não há utilizadores) --------------
-// Todas as contas de exemplo usam a password: mywaste123
+// Todas as contas de exemplo usam a password: noslixu123
 function seedIfEmpty() {
     const userCount = db.prepare(`SELECT COUNT(*) AS total FROM users`).get().total
     if (userCount === 0) {
-        const pw = hashPassword("mywaste123")
+        const pw = hashPassword("noslixu123")
         const addUser = db.prepare(`
             INSERT INTO users (role, name, email, phone, zone, password_hash)
             VALUES (?, ?, ?, ?, ?, ?);
@@ -114,22 +114,22 @@ function seedIfEmpty() {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
         `)
 
-        addUser.run("admin", "Equipa My Waste", "admin@mywaste.cv", null, "Platô", pw)
+        addUser.run("admin", "Equipa Nôs Lixu", "admin@noslixu.cv", null, "Platô", pw)
 
         const recyclers = [
-            ["Reciclagem Platô", "reciclador1@mywaste.cv", "2389000001", "Platô",
+            ["Reciclagem Platô", "reciclador1@noslixu.cv", "2389000001", "Platô",
              "Recolha de papel e eletrónicos no centro da cidade.",
              "Papéis e Papelão,Resíduos Eletrónicos", "Platô,Prainha,Fazenda", 1, 1,
              "Seg-Sex 08:00-16:00", null, "Rua Serpa Pinto, N° 12"],
-            ["Eco Palmarejo", "reciclador2@mywaste.cv", "2389000002", "Palmarejo",
+            ["Eco Palmarejo", "reciclador2@noslixu.cv", "2389000002", "Palmarejo",
              "Pilhas, lâmpadas e óleo alimentar usado.",
              "Pilhas e Baterias,Lâmpadas,Óleo de Cozinha", "Palmarejo,Palmarejo Grande,Achada Santo António", 1, 1,
              "Seg-Sáb 09:00-18:00", null, "Avenida OUA, Bloco B"],
-            ["Verde Achada Santo António", "reciclador3@mywaste.cv", "2389000003", "Achada Santo António",
+            ["Verde Achada Santo António", "reciclador3@noslixu.cv", "2389000003", "Achada Santo António",
              "Compostagem e recolha de orgânicos e óleo.",
              "Resíduos Orgânicos,Óleo de Cozinha", "Achada Santo António,Terra Branca,Tira Chapéu", 1, 0,
              "Seg-Sex 07:00-15:00", null, "Rua da Liberdade, junto ao mercado"],
-            ["Cantinho C Terra Branca", "reciclador4@mywaste.cv", "2389000004", "Terra Branca",
+            ["Cantinho C Terra Branca", "reciclador4@noslixu.cv", "2389000004", "Terra Branca",
              "Ponto de entrega para plástico, metal, papel e eletrónicos.",
              "Plástico,Metal / Latas,Papéis e Papelão,Resíduos Eletrónicos,Pilhas e Baterias",
              "Terra Branca,Calabaceira,Safende,Vila Nova", 0, 1,

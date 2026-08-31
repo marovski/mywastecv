@@ -1,6 +1,6 @@
 // Zonas / bairros da cidade da Praia (Ilha de Santiago, Cabo Verde).
 // Fonte única de verdade usada para os menus de seleção e para a validação
-// no servidor. O projeto My Waste é focado na Praia.
+// no servidor. O projeto Nôs Lixu é focado na Praia.
 const praiaZones = [
     "Platô",
     "Achada Santo António",

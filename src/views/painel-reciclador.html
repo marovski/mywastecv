@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% set pageId = "page-painel" %}
-{% block title %}<title>Painel — My Waste</title>{% endblock title %}
+{% block title %}<title>Painel — Nôs Lixu</title>{% endblock title %}
 {% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
 
 {% block content %}
@@ -10,7 +10,7 @@
         <header class="page-head">
             <h1>Painel do reciclador</h1>
             {% if not profile.verified_at %}
-                <div class="notice">A sua conta está <strong>por verificar</strong>. A equipa My Waste irá validar o seu perfil antes de poder reivindicar anúncios.</div>
+                <div class="notice">A sua conta está <strong>por verificar</strong>. A equipa Nôs Lixu irá validar o seu perfil antes de poder reivindicar anúncios.</div>
             {% endif %}
             <a class="btn" href="/anuncios">Ver anúncios disponíveis</a>
             <a class="btn btn-ghost" href="/perfil">Editar perfil</a>

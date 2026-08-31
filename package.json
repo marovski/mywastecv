@@ -1,6 +1,6 @@
 {
-  "name": "my-waste",
-  "description": "My Waste — plataforma do movimento de reciclagem da Praia (Cantinho C / Global Shapers Praia Hub)",
+  "name": "nos-lixu",
+  "description": "Nôs Lixu — plataforma do movimento de reciclagem da Praia (Cantinho C / Global Shapers Praia Hub)",
   "engines": {
     "node": ">=22.5.0"
   },

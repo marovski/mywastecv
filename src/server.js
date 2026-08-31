@@ -398,7 +398,7 @@ server.post("/anuncios/:id/reivindicar", requireRole("reciclador"), verifyCsrf, 
     try {
         const profile = db.prepare(`SELECT verified_at FROM recycler_profiles WHERE user_id = ?`).get(user.id)
         if (!profile || !profile.verified_at) {
-            return res.status(403).render("error.html", { message: "A sua conta de reciclador ainda não foi verificada pela equipa My Waste." })
+            return res.status(403).render("error.html", { message: "A sua conta de reciclador ainda não foi verificada pela equipa Nôs Lixu." })
         }
         const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(req.params.id)
         if (!listing || listing.status !== "aberta") {
@@ -664,4 +664,4 @@ server.get("/impacto", (req, res) => {
 })
 
 const PORT = process.env.PORT || 8001
-server.listen(PORT, () => console.log(`My Waste a correr na porta ${PORT}`))
+server.listen(PORT, () => console.log(`Nôs Lixu a correr na porta ${PORT}`))

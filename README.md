@@ -1,4 +1,6 @@
-# My Waste
+# Nôs Lixu
+
+> *Da bida nôbu pa nôs lixu.*
 
 Plataforma do movimento de reciclagem da **Praia, Cabo Verde** — um projeto
 **Cantinho C** em parceria com o **Global Shapers Praia Hub**.
@@ -34,8 +36,8 @@ npm start          # http://localhost:8001
 Requer **Node 22.5+**. A base de dados (`src/database/database.db`) é criada e
 populada com dados de exemplo no primeiro arranque.
 
-Contas de exemplo (password `mywaste123`): `admin@mywaste.cv`,
-`reciclador1@mywaste.cv`, `ana@exemplo.cv`.
+Contas de exemplo (password `noslixu123`): `admin@noslixu.cv`,
+`reciclador1@noslixu.cv`, `ana@exemplo.cv`.
 
 Em produção, defina `SESSION_SECRET`.
 

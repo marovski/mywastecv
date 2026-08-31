@@ -1,4 +1,4 @@
-// Materiais de valor acrescentado aceites na plataforma My Waste.
+// Materiais de valor acrescentado aceites na plataforma Nôs Lixu.
 // co2ePerKg = estimativa indicativa de kg de CO2 equivalente evitados por cada
 // kg reciclado (a afinar com a Quercus Cabo Verde / dados locais).
 const materials = [
