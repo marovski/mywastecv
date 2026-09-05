@@ -26,7 +26,7 @@ const {
     loginBlocked, registerFailedLogin, clearLoginAttempts
 } = require("./auth")
 const { csrfToken, verifyCsrf } = require("./csrf")
-const { listingPhoto, publicPath } = require("./uploads")
+const { listingPhoto, publicPath, removeUpload, sweepOrphans } = require("./uploads")
 
 const collectItems = itemLabels
 
@@ -89,6 +89,21 @@ function parseWeights(body) {
     }
     return out
 }
+// Marca como "expirada" qualquer oferta aberta cuja data de validade já passou.
+// Corre antes das listagens (é barato) em vez de depender de uma tarefa agendada.
+function sweepExpired() {
+    try {
+        db.prepare(`
+            UPDATE listings SET status = 'expirada'
+            WHERE status = 'aberta'
+              AND available_until IS NOT NULL
+              AND available_until < date('now')
+        `).run()
+    } catch (err) {
+        console.error("sweepExpired:", err)
+    }
+}
+
 // Reciclador cujo claim foi aceite (para revelar contactos).
 function acceptedRecyclerId(listingId) {
     const row = db.prepare(
@@ -105,7 +120,9 @@ server.get("/projeto", (req, res) => res.render("projeto.html"))
 
 // --- Diretório público de recicladores (apenas verificados) ----------
 server.get("/recicladores", (req, res) => {
-    const zone = (req.query.zone || "").trim()
+    // Só aceitamos zonas conhecidas: evita curingas (%, _) no LIKE e filtros inválidos.
+    const raw = (req.query.zone || "").trim()
+    const zone = zones.includes(raw) ? raw : ""
     try {
         const base = `
             SELECT u.name, u.phone, p.*
@@ -113,8 +130,13 @@ server.get("/recicladores", (req, res) => {
             JOIN users u ON u.id = p.user_id
             WHERE p.verified_at IS NOT NULL
         `
+        // service_zones é um CSV: comparamos com as vírgulas incluídas para que
+        // "Palmarejo" não corresponda a "Palmarejo Grande".
         const rows = zone
-            ? db.prepare(base + ` AND p.service_zones LIKE ? ORDER BY u.name`).all(`%${zone}%`)
+            ? db.prepare(base + `
+                AND (',' || p.service_zones || ',') LIKE ('%,' || ? || ',%')
+                ORDER BY u.name
+            `).all(zone)
             : db.prepare(base + ` ORDER BY u.name`).all()
 
         return res.render("recicladores.html", { recyclers: rows, total: rows.length, zone })
@@ -207,6 +229,7 @@ server.post("/sair", verifyCsrf, (req, res) => {
 // Painel (encaminha por papel)
 // =====================================================================
 server.get("/painel", requireAuth, (req, res) => {
+    sweepExpired()
     const user = res.locals.currentUser
     try {
         if (user.role === "reciclador") {
@@ -286,7 +309,20 @@ server.post("/anuncios/novo", requireRole("cidadao"), listingPhoto, verifyCsrf, 
     if (!items.length) errors.push("Selecione pelo menos um material.")
     if (!req.body.zone || !zones.includes(req.body.zone)) errors.push("Selecione uma zona da Praia.")
 
+    // "Disponível até" tem de ser uma data válida e não pode estar no passado —
+    // caso contrário o anúncio nasceria já expirado.
+    const until = (req.body.available_until || "").trim()
+    if (until) {
+        const today = new Date().toISOString().slice(0, 10)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(until) || Number.isNaN(Date.parse(until))) {
+            errors.push("Data de validade inválida.")
+        } else if (until < today) {
+            errors.push("A data de validade não pode estar no passado.")
+        }
+    }
+
     if (errors.length) {
+        removeUpload(req.file)
         return res.status(400).render("anuncio-novo.html", { errors, values: req.body })
     }
 
@@ -302,16 +338,18 @@ server.post("/anuncios/novo", requireRole("cidadao"), listingPhoto, verifyCsrf, 
             req.body.address || null,
             publicPath(req.file),
             req.body.note || null,
-            req.body.available_until || null
+            until || null
         )
         return res.redirect("/painel")
     } catch (err) {
+        removeUpload(req.file)
         return serverError(res, err)
     }
 })
 
 // Board de anúncios abertos (reciclador)
 server.get("/anuncios", requireRole("reciclador"), (req, res) => {
+    sweepExpired()
     const user = res.locals.currentUser
     const profile = db.prepare(`SELECT * FROM recycler_profiles WHERE user_id = ?`).get(user.id)
     const showAll = req.query.todos === "1"
@@ -345,6 +383,7 @@ server.get("/anuncios", requireRole("reciclador"), (req, res) => {
 
 // Detalhe de um anúncio
 server.get("/anuncios/:id", requireAuth, (req, res) => {
+    sweepExpired()
     const user = res.locals.currentUser
     try {
         const listing = db.prepare(`
@@ -662,6 +701,17 @@ server.get("/impacto", (req, res) => {
         return serverError(res, err)
     }
 })
+
+// Limpeza no arranque: fotos sem anúncio e anúncios fora de validade.
+try {
+    sweepOrphans(
+        db.prepare(`SELECT photo_path FROM listings WHERE photo_path IS NOT NULL`)
+          .all().map(r => r.photo_path)
+    )
+} catch (err) {
+    console.error("sweepOrphans:", err)
+}
+sweepExpired()
 
 const PORT = process.env.PORT || 8001
 server.listen(PORT, () => console.log(`Nôs Lixu a correr na porta ${PORT}`))
