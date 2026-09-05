@@ -29,8 +29,11 @@
                 <strong>Contacto</strong><br>
                 {{ listing.citizen_name }}<br>
                 {% if listing.address %}{{ listing.address }} ({{ listing.zone }})<br>{% endif %}
-                {% if listing.citizen_phone %}
-                    <a href="https://wa.me/{{ listing.citizen_phone | replace(' ', '') }}" target="_blank" rel="noopener">WhatsApp {{ listing.citizen_phone }}</a>
+                {% if listing.citizen_phone %}{{ listing.citizen_phone }}<br>{% endif %}
+                {% if waToCitizen %}
+                    <a class="btn btn-wa" href="{{ waToCitizen }}" target="_blank" rel="noopener">
+                        Avisar o cidadão por WhatsApp
+                    </a>
                 {% endif %}
             </div>
         {% else %}
@@ -61,8 +64,15 @@
                         </p>
                         {% if c.message %}<p>“{{ c.message }}”</p>{% endif %}
                         {% if c.status == 'aceite' %}
-                            <p><a href="https://wa.me/{{ c.recycler_phone | replace(' ', '') }}" target="_blank" rel="noopener">WhatsApp {{ c.recycler_phone }}</a>
-                            {% if c.recycler_address %}· {{ c.recycler_address }}{% endif %}</p>
+                            <p>
+                                {{ c.recycler_phone }}
+                                {% if c.recycler_address %}· {{ c.recycler_address }}{% endif %}
+                            </p>
+                            {% if waToRecycler %}
+                                <a class="btn btn-wa" href="{{ waToRecycler }}" target="_blank" rel="noopener">
+                                    Avisar o reciclador por WhatsApp
+                                </a>
+                            {% endif %}
                         {% elif c.status == 'pendente' and listing.status == 'aberta' %}
                             <form action="/anuncios/{{ listing.id }}/claims/{{ c.id }}/aceitar" method="POST">
                                 {% include "partials/csrf.html" %}

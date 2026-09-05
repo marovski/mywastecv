@@ -27,6 +27,7 @@ const {
 } = require("./auth")
 const { csrfToken, verifyCsrf } = require("./csrf")
 const { listingPhoto, publicPath, removeUpload, sweepOrphans } = require("./uploads")
+const { waLink, messageToRecycler, messageToCitizen } = require("./whatsapp")
 
 const collectItems = itemLabels
 
@@ -423,8 +424,30 @@ server.get("/anuncios/:id", requireAuth, (req, res) => {
             try { collection.weights = JSON.parse(collection.weights_json || "{}") } catch { collection.weights = {} }
         }
 
+        // Avisos por WhatsApp: só depois de um match e só para as duas partes
+        // envolvidas — segue exatamente a mesma regra de privacidade dos contactos.
+        let waToRecycler = null
+        let waToCitizen = null
+        if (acceptedId && canSeeContact) {
+            if (isOwner) {
+                const accepted = claims.find(c => c.status === "aceite")
+                if (accepted) {
+                    waToRecycler = waLink(
+                        accepted.recycler_phone,
+                        messageToRecycler(listing, user.name)
+                    )
+                }
+            } else {
+                waToCitizen = waLink(
+                    listing.citizen_phone,
+                    messageToCitizen(listing, user.name)
+                )
+            }
+        }
+
         return res.render("anuncio.html", {
-            listing, isOwner, canSeeContact, claims, myClaim, collection
+            listing, isOwner, canSeeContact, claims, myClaim, collection,
+            waToRecycler, waToCitizen
         })
     } catch (err) {
         return serverError(res, err)
