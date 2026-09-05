@@ -27,6 +27,7 @@ Auth = email + password (`crypto.scrypt`), session in a signed cookie
 ```bash
 npm install
 npm run dev   # nodemon; `npm start` runs plain `node src/server.js` (used in prod)
+npm test      # node:test, no dependencies; tests run against an in-memory SQLite
 ```
 
 - `http://localhost:8001` (`PORT` env overrides). Requires **Node 22.5+**.
@@ -37,7 +38,7 @@ npm run dev   # nodemon; `npm start` runs plain `node src/server.js` (used in pr
 - `server.set("trust proxy", 1)` — needed for `secure` cookies behind Render's proxy.
 - `/uploads/*` is served from `<DATA_DIR>/uploads` (mounted before `public/`).
 - Deploy: `render.yaml` blueprint (free plan; see README for the persistent-disk upgrade).
-- No tests / build / lint.
+- No build / lint. Tests: `node --test`, in `test/`, no test dependencies.
 - **Seed accounts** (all password `noslixu123`): `admin@noslixu.cv` (admin);
   `reciclador1@noslixu.cv`…`reciclador4@noslixu.cv` (verified recyclers);
   `ana@exemplo.cv`, `joao@exemplo.cv` (citizens).
@@ -46,9 +47,14 @@ npm run dev   # nodemon; `npm start` runs plain `node src/server.js` (used in pr
 
 | file | role |
 |---|---|
-| `server.js` | all routes + inline `db.prepare()` queries (synchronous) |
+| `server.js` | routes only: parse the request, call a domain module, render |
+| `domain/listings.js` | the anúncio lifecycle: `claim`/`accept`/`withdraw`/`expire`/`conclude`/`sweepExpired` |
+| `domain/visibility.js` | who may see what on an anúncio (the privacy rule) — `forListing(db, id, viewer)` |
+| `domain/match.js` | recycler profile ↔ anúncio matching; owns the CSV storage format |
+| `domain/impacto.js` | the public impact metrics — `metrics(db)` |
 | `config.js` | resolves `DATA_DIR` → `DB_PATH`, `UPLOADS_DIR`, `LISTINGS_UPLOAD_DIR` |
-| `database/db.js` | opens SQLite at `DB_PATH`, creates schema, seeds when empty |
+| `database/db.js` | opens SQLite at `DB_PATH`, applies the schema, seeds when empty |
+| `database/schema.js` | `createSchema(db)` — the CREATE TABLEs, apart from opening the file |
 | `password.js` | `hashPassword` / `verifyPassword` (scrypt, timing-safe) |
 | `auth.js` | `loadUser`, `attachUser`, `requireAuth`, `requireRole(...)`, login throttle |
 | `csrf.js` | `csrfToken` (per-session token → `res.locals`), `verifyCsrf` (checks `_csrf`) |
@@ -84,15 +90,22 @@ Shared: `/anuncios/:id` (detail; privacy-gated contact),
 `/anuncios/:id/concluir` (+POST → collection_records).
 Admin (`requireRole('admin')`): `/admin`, `POST /admin/recicladores/:userId/verificar|recusar`.
 
-**Privacy rule**: `listings.address` + citizen phone are nulled in the
-`/anuncios/:id` handler unless the viewer is the owner or the accepted recycler.
+**Privacy rule**: `listings.address` + citizen phone are revealed only to the
+owner and the accepted recycler. This lives entirely in `domain/visibility.js`
+(`forListing`), which also decides the WhatsApp links and `canConclude`. Handlers
+must never re-derive it — ask the module.
 
 ## Conventions
 
 - JS: 4-space indent, double quotes, no semicolons.
 - All SQL uses bound `?` params. Every state-changing POST form includes
   `{% include "partials/csrf.html" %}` and the route uses `verifyCsrf`.
-- Every mutation re-checks ownership (`listing.citizen_id`, `claim.recycler_id`).
+- Every mutation re-checks ownership — inside the domain module, not the handler.
+- Domain modules take `db` as their first argument (they never require it). That
+  is the seam: production passes the SQLite file, tests pass `:memory:` built
+  with `createSchema`. Keep it that way.
+- Domain operations return `{ ok: true, ... }` or `{ ok: false, status, message }`;
+  handlers translate that with `renderFail(res, result)`.
 - Geo values validated against `data/praia-zones.js`; materials against `data/materials.js`.
 - Views extend `layout.html`; interior pages `{% include "partials/nav.html" %}`.
 
@@ -109,8 +122,11 @@ Admin (`requireRole('admin')`): `/admin`, `POST /admin/recicladores/:userId/veri
   `expirada` — runs at startup and at the top of `/painel`, `/anuncios`,
   `/anuncios/:id`; `sweepOrphans()` (uploads.js) deletes upload files no listing
   references — runs at startup only.
-- Multer writes the file before `verifyCsrf` runs, so every failure path after
-  `listingPhoto` must call `removeUpload(req.file)` or it leaks a file.
+- Multer writes the file before `verifyCsrf` runs. Rather than remembering
+  `removeUpload` on every failure path, `POST /anuncios/novo` runs its work
+  inside `withStagedPhoto(diskStore, req.file, ...)`, which discards the file
+  unless the callback returns `{ ok: true }`. `sweepOrphans()` is now a backstop,
+  not the mechanism.
 - Listing photos are downscaled **client-side** (`public/scripts/photo-resize.js`,
   max 1600px / JPEG q0.82) — deliberately not server-side, since every image
   library is a native module and the project has none.

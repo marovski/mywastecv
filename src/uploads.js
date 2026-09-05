@@ -80,4 +80,23 @@ function sweepOrphans(referencedPaths) {
     if (removed) console.log(`Uploads órfãos removidos: ${removed}`)
 }
 
-module.exports = { listingPhoto, publicPath, removeUpload, sweepOrphans }
+// Armazenamento em disco visto como adaptador: é o que withStagedPhoto usa
+// em produção. Os testes passam um equivalente em memória.
+const diskStore = { discard: removeUpload }
+
+// Corre o handler com a foto já escrita em staging e garante que o ficheiro
+// só sobrevive se o handler correr bem. Sem isto, cada caminho de falha tinha
+// de se lembrar de chamar removeUpload — e esquecer-se deixava um órfão.
+function withStagedPhoto(store, file, handler) {
+    let result
+    try {
+        result = handler()
+    } catch (err) {
+        store.discard(file)
+        throw err
+    }
+    if (!result || result.ok === false) store.discard(file)
+    return result
+}
+
+module.exports = { listingPhoto, publicPath, removeUpload, sweepOrphans, withStagedPhoto, diskStore }

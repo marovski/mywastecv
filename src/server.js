@@ -19,17 +19,21 @@ process.on("unhandledRejection", (err) => console.error("unhandledRejection:", e
 server.get("/healthz", (req, res) => res.type("text").send("ok"))
 
 const zones = require("./data/praia-zones")
-const { materials, labels: itemLabels, co2eByLabel } = require("./data/materials")
+const { materials, labels: itemLabels } = require("./data/materials")
 const { hashPassword, verifyPassword } = require("./password")
 const {
     attachUser, requireAuth, requireRole,
     loginBlocked, registerFailedLogin, clearLoginAttempts
 } = require("./auth")
 const { csrfToken, verifyCsrf } = require("./csrf")
-const { listingPhoto, publicPath, removeUpload, sweepOrphans } = require("./uploads")
-const { waLink, messageToRecycler, messageToCitizen } = require("./whatsapp")
+const { listingPhoto, publicPath, sweepOrphans, withStagedPhoto, diskStore } = require("./uploads")
 
-const collectItems = itemLabels
+// Módulos de domínio: recebem a base de dados, para que os testes lhes possam
+// passar um adaptador em memória.
+const listings = require("./domain/listings")
+const visibility = require("./domain/visibility")
+const match = require("./domain/match")
+const impacto = require("./domain/impacto")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -74,13 +78,9 @@ function serverError(res, err) {
         message: "Ocorreu um erro. Tente novamente mais tarde."
     })
 }
-function asArray(v) {
-    if (v === undefined || v === null) return []
-    return Array.isArray(v) ? v : [v]
-}
-function keepKnown(arr, allowed) {
-    const set = new Set(allowed)
-    return [...new Set(asArray(arr).filter(x => set.has(x)))]
+// Traduz um { ok: false, status, message } de um módulo de domínio numa página.
+function renderFail(res, result) {
+    return res.status(result.status).render("error.html", { message: result.message })
 }
 function parseWeights(body) {
     const out = {}
@@ -90,27 +90,13 @@ function parseWeights(body) {
     }
     return out
 }
-// Marca como "expirada" qualquer oferta aberta cuja data de validade já passou.
-// Corre antes das listagens (é barato) em vez de depender de uma tarefa agendada.
+// A varredura corre antes das listagens; nunca deve derrubar o pedido.
 function sweepExpired() {
     try {
-        db.prepare(`
-            UPDATE listings SET status = 'expirada'
-            WHERE status = 'aberta'
-              AND available_until IS NOT NULL
-              AND available_until < date('now')
-        `).run()
+        listings.sweepExpired(db)
     } catch (err) {
         console.error("sweepExpired:", err)
     }
-}
-
-// Reciclador cujo claim foi aceite (para revelar contactos).
-function acceptedRecyclerId(listingId) {
-    const row = db.prepare(
-        `SELECT recycler_id FROM claims WHERE listing_id = ? AND status = 'aceite'`
-    ).get(listingId)
-    return row ? row.recycler_id : null
 }
 
 // =====================================================================
@@ -131,11 +117,9 @@ server.get("/recicladores", (req, res) => {
             JOIN users u ON u.id = p.user_id
             WHERE p.verified_at IS NOT NULL
         `
-        // service_zones é um CSV: comparamos com as vírgulas incluídas para que
-        // "Palmarejo" não corresponda a "Palmarejo Grande".
         const rows = zone
             ? db.prepare(base + `
-                AND (',' || p.service_zones || ',') LIKE ('%,' || ? || ',%')
+                AND ${match.zoneFilterSql("p.service_zones")}
                 ORDER BY u.name
             `).all(zone)
             : db.prepare(base + ` ORDER BY u.name`).all()
@@ -267,8 +251,7 @@ server.get("/perfil", requireRole("reciclador"), (req, res) => {
 
 server.post("/perfil", requireRole("reciclador"), verifyCsrf, (req, res) => {
     const user = res.locals.currentUser
-    const acceptedItems = keepKnown(req.body.accepted_items, itemLabels)
-    const serviceZones = keepKnown(req.body.service_zones, zones)
+    const { accepted_items, service_zones } = match.serialise(req.body.accepted_items, req.body.service_zones)
     try {
         db.prepare(`
             UPDATE recycler_profiles SET
@@ -278,8 +261,8 @@ server.post("/perfil", requireRole("reciclador"), verifyCsrf, (req, res) => {
         `).run(
             (req.body.org_name || user.name).trim(),
             req.body.description || null,
-            acceptedItems.join(","),
-            serviceZones.join(","),
+            accepted_items,
+            service_zones,
             req.body.does_pickup ? 1 : 0,
             req.body.does_dropoff ? 1 : 0,
             req.body.hours || null,
@@ -302,7 +285,7 @@ server.get("/anuncios/novo", requireRole("cidadao"), (req, res) => {
 
 server.post("/anuncios/novo", requireRole("cidadao"), listingPhoto, verifyCsrf, (req, res) => {
     const user = res.locals.currentUser
-    const items = keepKnown(req.body.items, itemLabels)
+    const items = match.knownItems(req.body.items)
     const qty = parseFloat(req.body.quantity_kg_est)
 
     const errors = []
@@ -322,30 +305,36 @@ server.post("/anuncios/novo", requireRole("cidadao"), listingPhoto, verifyCsrf, 
         }
     }
 
-    if (errors.length) {
-        removeUpload(req.file)
-        return res.status(400).render("anuncio-novo.html", { errors, values: req.body })
-    }
-
+    // A foto já está escrita em disco: withStagedPhoto garante que só sobrevive
+    // se este bloco correr bem, em vez de cada caminho de falha se lembrar dela
+    // (inclui a exceção — descarta o ficheiro e volta a lançar).
+    let outcome
     try {
-        db.prepare(`
-            INSERT INTO listings (citizen_id, items, quantity_kg_est, zone, address, photo_path, note, available_until)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        `).run(
-            user.id,
-            items.join(","),
-            qty > 0 ? qty : null,
-            req.body.zone,
-            req.body.address || null,
-            publicPath(req.file),
-            req.body.note || null,
-            until || null
-        )
-        return res.redirect("/painel")
+        outcome = withStagedPhoto(diskStore, req.file, () => {
+            if (errors.length) return { ok: false }
+            db.prepare(`
+                INSERT INTO listings (citizen_id, items, quantity_kg_est, zone, address, photo_path, note, available_until)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            `).run(
+                user.id,
+                items.join(","),
+                qty > 0 ? qty : null,
+                req.body.zone,
+                req.body.address || null,
+                publicPath(req.file),
+                req.body.note || null,
+                until || null
+            )
+            return { ok: true }
+        })
     } catch (err) {
-        removeUpload(req.file)
         return serverError(res, err)
     }
+
+    if (!outcome.ok) {
+        return res.status(400).render("anuncio-novo.html", { errors, values: req.body })
+    }
+    return res.redirect("/painel")
 })
 
 // Board de anúncios abertos (reciclador)
@@ -361,16 +350,7 @@ server.get("/anuncios", requireRole("reciclador"), (req, res) => {
             WHERE l.status = 'aberta' ORDER BY l.created_at DESC
         `).all()
 
-        const myZones = new Set((profile.service_zones || "").split(",").filter(Boolean))
-        const myItems = new Set((profile.accepted_items || "").split(",").filter(Boolean))
-
-        if (!showAll && (myZones.size || myItems.size)) {
-            rows = rows.filter(l => {
-                const zoneOk = !myZones.size || myZones.has(l.zone)
-                const itemOk = !myItems.size || l.items.split(",").some(i => myItems.has(i))
-                return zoneOk && itemOk
-            })
-        }
+        if (!showAll) rows = rows.filter(l => match.accepts(profile, l))
 
         const claimed = db.prepare(
             `SELECT listing_id FROM claims WHERE recycler_id = ? AND status IN ('pendente','aceite')`
@@ -385,70 +365,12 @@ server.get("/anuncios", requireRole("reciclador"), (req, res) => {
 // Detalhe de um anúncio
 server.get("/anuncios/:id", requireAuth, (req, res) => {
     sweepExpired()
-    const user = res.locals.currentUser
     try {
-        const listing = db.prepare(`
-            SELECT l.*, u.name AS citizen_name, u.phone AS citizen_phone
-            FROM listings l JOIN users u ON u.id = l.citizen_id
-            WHERE l.id = ?
-        `).get(req.params.id)
-        if (!listing) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
-
-        const isOwner = user.id === listing.citizen_id
-        const acceptedId = acceptedRecyclerId(listing.id)
-        const canSeeContact = isOwner || (user.role === "reciclador" && user.id === acceptedId)
-
-        // Privacidade: morada e telefone só são revelados ao dono e ao reciclador aceite.
-        if (!canSeeContact) {
-            listing.address = null
-            listing.citizen_phone = null
-        }
-
-        const claims = isOwner
-            ? db.prepare(`
-                SELECT c.*, u.name AS recycler_name, u.phone AS recycler_phone,
-                       p.address AS recycler_address, p.verified_at
-                FROM claims c
-                JOIN users u ON u.id = c.recycler_id
-                LEFT JOIN recycler_profiles p ON p.user_id = c.recycler_id
-                WHERE c.listing_id = ? ORDER BY c.created_at
-            `).all(listing.id)
-            : []
-
-        const myClaim = user.role === "reciclador"
-            ? db.prepare(`SELECT * FROM claims WHERE listing_id = ? AND recycler_id = ?`).get(listing.id, user.id)
-            : null
-
-        const collection = db.prepare(`SELECT * FROM collection_records WHERE listing_id = ?`).get(listing.id)
-        if (collection) {
-            try { collection.weights = JSON.parse(collection.weights_json || "{}") } catch { collection.weights = {} }
-        }
-
-        // Avisos por WhatsApp: só depois de um match e só para as duas partes
-        // envolvidas — segue exatamente a mesma regra de privacidade dos contactos.
-        let waToRecycler = null
-        let waToCitizen = null
-        if (acceptedId && canSeeContact) {
-            if (isOwner) {
-                const accepted = claims.find(c => c.status === "aceite")
-                if (accepted) {
-                    waToRecycler = waLink(
-                        accepted.recycler_phone,
-                        messageToRecycler(listing, user.name)
-                    )
-                }
-            } else {
-                waToCitizen = waLink(
-                    listing.citizen_phone,
-                    messageToCitizen(listing, user.name)
-                )
-            }
-        }
-
-        return res.render("anuncio.html", {
-            listing, isOwner, canSeeContact, claims, myClaim, collection,
-            waToRecycler, waToCitizen
-        })
+        // Uma só pergunta ao módulo de visibilidade: o que é que este visitante
+        // pode ver e fazer neste anúncio. A privacidade não se decide aqui.
+        const view = visibility.forListing(db, req.params.id, res.locals.currentUser)
+        if (!view) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
+        return res.render("anuncio.html", view)
     } catch (err) {
         return serverError(res, err)
     }
@@ -456,21 +378,10 @@ server.get("/anuncios/:id", requireAuth, (req, res) => {
 
 // Reciclador reivindica um anúncio
 server.post("/anuncios/:id/reivindicar", requireRole("reciclador"), verifyCsrf, (req, res) => {
-    const user = res.locals.currentUser
     try {
-        const profile = db.prepare(`SELECT verified_at FROM recycler_profiles WHERE user_id = ?`).get(user.id)
-        if (!profile || !profile.verified_at) {
-            return res.status(403).render("error.html", { message: "A sua conta de reciclador ainda não foi verificada pela equipa Nôs Lixu." })
-        }
-        const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(req.params.id)
-        if (!listing || listing.status !== "aberta") {
-            return res.status(400).render("error.html", { message: "Este anúncio já não está disponível." })
-        }
-        db.prepare(`
-            INSERT OR IGNORE INTO claims (listing_id, recycler_id, message)
-            VALUES (?, ?, ?)
-        `).run(listing.id, user.id, req.body.message || null)
-        return res.redirect(`/anuncios/${listing.id}`)
+        const result = listings.claim(db, req.params.id, res.locals.currentUser.id, req.body.message)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect(`/anuncios/${req.params.id}`)
     } catch (err) {
         return serverError(res, err)
     }
@@ -478,17 +389,10 @@ server.post("/anuncios/:id/reivindicar", requireRole("reciclador"), verifyCsrf, 
 
 // Reciclador retira o seu interesse
 server.post("/claims/:id/retirar", requireRole("reciclador"), verifyCsrf, (req, res) => {
-    const user = res.locals.currentUser
     try {
-        const claim = db.prepare(`SELECT * FROM claims WHERE id = ?`).get(req.params.id)
-        if (!claim || claim.recycler_id !== user.id) {
-            return res.status(403).render("error.html", { message: "Ação não permitida." })
-        }
-        db.prepare(`UPDATE claims SET status = 'retirada' WHERE id = ?`).run(claim.id)
-        if (claim.status === "aceite") {
-            db.prepare(`UPDATE listings SET status = 'aberta' WHERE id = ? AND status = 'reservada'`).run(claim.listing_id)
-        }
-        return res.redirect(`/anuncios/${claim.listing_id}`)
+        const result = listings.withdraw(db, req.params.id, res.locals.currentUser.id)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect(`/anuncios/${result.listingId}`)
     } catch (err) {
         return serverError(res, err)
     }
@@ -496,21 +400,10 @@ server.post("/claims/:id/retirar", requireRole("reciclador"), verifyCsrf, (req, 
 
 // Cidadão aceita um claim
 server.post("/anuncios/:id/claims/:claimId/aceitar", requireRole("cidadao"), verifyCsrf, (req, res) => {
-    const user = res.locals.currentUser
     try {
-        const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(req.params.id)
-        if (!listing || listing.citizen_id !== user.id) {
-            return res.status(403).render("error.html", { message: "Ação não permitida." })
-        }
-        const claim = db.prepare(`SELECT * FROM claims WHERE id = ? AND listing_id = ?`).get(req.params.claimId, listing.id)
-        if (!claim || claim.status !== "pendente") {
-            return res.status(400).render("error.html", { message: "Este pedido já não pode ser aceite." })
-        }
-        db.prepare(`UPDATE claims SET status = 'aceite' WHERE id = ?`).run(claim.id)
-        db.prepare(`UPDATE claims SET status = 'recusada' WHERE listing_id = ? AND id != ? AND status = 'pendente'`)
-          .run(listing.id, claim.id)
-        db.prepare(`UPDATE listings SET status = 'reservada' WHERE id = ?`).run(listing.id)
-        return res.redirect(`/anuncios/${listing.id}`)
+        const result = listings.accept(db, req.params.id, req.params.claimId, res.locals.currentUser.id)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect(`/anuncios/${req.params.id}`)
     } catch (err) {
         return serverError(res, err)
     }
@@ -518,13 +411,9 @@ server.post("/anuncios/:id/claims/:claimId/aceitar", requireRole("cidadao"), ver
 
 // Cidadão expira o anúncio
 server.post("/anuncios/:id/expirar", requireRole("cidadao"), verifyCsrf, (req, res) => {
-    const user = res.locals.currentUser
     try {
-        const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(req.params.id)
-        if (!listing || listing.citizen_id !== user.id) {
-            return res.status(403).render("error.html", { message: "Ação não permitida." })
-        }
-        db.prepare(`UPDATE listings SET status = 'expirada' WHERE id = ? AND status IN ('aberta','reservada')`).run(listing.id)
+        const result = listings.expire(db, req.params.id, res.locals.currentUser.id)
+        if (!result.ok) return renderFail(res, result)
         return res.redirect("/painel")
     } catch (err) {
         return serverError(res, err)
@@ -535,48 +424,29 @@ server.post("/anuncios/:id/expirar", requireRole("cidadao"), verifyCsrf, (req, r
 // Confirmar recolha (qualquer uma das partes)
 // =====================================================================
 server.get("/anuncios/:id/concluir", requireAuth, (req, res) => {
-    const user = res.locals.currentUser
     try {
-        const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(req.params.id)
-        if (!listing) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
-
-        const acceptedId = acceptedRecyclerId(listing.id)
-        const allowed = user.id === listing.citizen_id || user.id === acceptedId
-        if (!allowed || listing.status !== "reservada") {
+        const view = visibility.forListing(db, req.params.id, res.locals.currentUser)
+        if (!view) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
+        if (!view.canConclude) {
             return res.status(403).render("error.html", { message: "Só é possível concluir um anúncio reservado." })
         }
-        return res.render("coleta-confirmar.html", { listing })
+        return res.render("coleta-confirmar.html", { listing: view.listing })
     } catch (err) {
         return serverError(res, err)
     }
 })
 
 server.post("/anuncios/:id/concluir", requireAuth, verifyCsrf, (req, res) => {
-    const user = res.locals.currentUser
     try {
-        const listing = db.prepare(`SELECT * FROM listings WHERE id = ?`).get(req.params.id)
-        if (!listing) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
+        const result = listings.conclude(db, req.params.id, res.locals.currentUser.id, parseWeights(req.body))
+        if (result.ok) return res.redirect(`/anuncios/${req.params.id}`)
 
-        const acceptedId = acceptedRecyclerId(listing.id)
-        const allowed = user.id === listing.citizen_id || user.id === acceptedId
-        if (!allowed || listing.status !== "reservada" || !acceptedId) {
-            return res.status(403).render("error.html", { message: "Ação não permitida." })
-        }
-
-        const weights = parseWeights(req.body)
-        if (!Object.keys(weights).length) {
-            return res.status(400).render("coleta-confirmar.html", {
-                listing, errors: ["Indique o peso recolhido de pelo menos um material."]
-            })
-        }
-
-        db.prepare(`
-            INSERT INTO collection_records (listing_id, recycler_id, citizen_id, weights_json, collected_at)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(listing.id, acceptedId, listing.citizen_id, JSON.stringify(weights), now())
-        db.prepare(`UPDATE listings SET status = 'recolhida' WHERE id = ?`).run(listing.id)
-
-        return res.redirect(`/anuncios/${listing.id}`)
+        // Falta de pesos volta ao formulário; o resto é uma página de erro.
+        if (result.status !== 400) return renderFail(res, result)
+        const view = visibility.forListing(db, req.params.id, res.locals.currentUser)
+        return res.status(400).render("coleta-confirmar.html", {
+            listing: view.listing, errors: [result.message]
+        })
     } catch (err) {
         return serverError(res, err)
     }
@@ -678,48 +548,7 @@ server.post("/workshops/:id/inscrever", verifyCsrf, (req, res) => {
 // =====================================================================
 server.get("/impacto", (req, res) => {
     try {
-        const workshopsDone = db.prepare(`SELECT COUNT(*) AS total FROM workshops WHERE date < ?`).get(now()).total
-
-        const recyclersMobilised = db.prepare(`
-            SELECT COUNT(*) AS total FROM (
-                SELECT user_id FROM recycler_profiles WHERE verified_at IS NOT NULL
-                UNION
-                SELECT recycler_id FROM collection_records
-            )
-        `).get().total
-
-        const citizensEngaged = db.prepare(`
-            SELECT COUNT(*) AS total FROM (
-                SELECT citizen_id AS k FROM collection_records
-                UNION
-                SELECT COALESCE(CAST(user_id AS TEXT), email) AS k FROM workshop_signups
-            )
-        `).get().total
-
-        const records = db.prepare(`SELECT recycler_id, weights_json FROM collection_records`).all()
-        const flows = new Set()
-        let kg = 0
-        let co2e = 0
-        for (const r of records) {
-            let w = {}
-            try { w = JSON.parse(r.weights_json || "{}") } catch { w = {} }
-            for (const [label, amount] of Object.entries(w)) {
-                flows.add(`${r.recycler_id}:${label}`)
-                kg += amount
-                co2e += amount * (co2eByLabel[label] || 0)
-            }
-        }
-
-        return res.render("impacto.html", {
-            metrics: {
-                workshops: workshopsDone,
-                flows: flows.size,
-                recyclers: recyclersMobilised,
-                citizens: citizensEngaged,
-                kg: Math.round(kg),
-                co2e: Math.round(co2e)
-            }
-        })
+        return res.render("impacto.html", { metrics: impacto.metrics(db) })
     } catch (err) {
         return serverError(res, err)
     }
