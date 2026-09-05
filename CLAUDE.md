@@ -104,3 +104,13 @@ Admin (`requireRole('admin')`): `/admin`, `POST /admin/recicladores/:userId/veri
 - Login throttle is in-memory (per process). CO₂e factors in `materials.js` are
   placeholders. No email/SMS — match notifications & ratings are **Phase B**.
 - Seed weights/collections make `/impacto` non-zero out of the box.
+- Two housekeeping sweeps, both cheap and synchronous, no scheduler:
+  `sweepExpired()` (server.js) marks past-`available_until` open listings
+  `expirada` — runs at startup and at the top of `/painel`, `/anuncios`,
+  `/anuncios/:id`; `sweepOrphans()` (uploads.js) deletes upload files no listing
+  references — runs at startup only.
+- Multer writes the file before `verifyCsrf` runs, so every failure path after
+  `listingPhoto` must call `removeUpload(req.file)` or it leaks a file.
+- Listing photos are downscaled **client-side** (`public/scripts/photo-resize.js`,
+  max 1600px / JPEG q0.82) — deliberately not server-side, since every image
+  library is a native module and the project has none.
