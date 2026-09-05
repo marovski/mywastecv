@@ -52,6 +52,7 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 | `domain/visibility.js` | who may see what on an anúncio (the privacy rule) — `forListing(db, id, viewer)` |
 | `domain/match.js` | recycler profile ↔ anúncio matching; owns the CSV storage format |
 | `domain/impacto.js` | the public impact metrics — `metrics(db)` |
+| `domain/ratings.js` | mutual avaliações after a recolha — who may rate whom, and the averages |
 | `config.js` | resolves `DATA_DIR` → `DB_PATH`, `UPLOADS_DIR`, `LISTINGS_UPLOAD_DIR` |
 | `database/db.js` | opens SQLite at `DB_PATH`, applies the schema, seeds when empty |
 | `database/schema.js` | `createSchema(db)` — the CREATE TABLEs, apart from opening the file |
@@ -74,6 +75,7 @@ locals. Multipart routes run `listingPhoto` **before** `verifyCsrf` (so
 - `listings` (id, citizen_id, items csv, quantity_kg_est, zone, **address** (private), photo_path, note, status `aberta|reservada|recolhida|expirada`, available_until)
 - `claims` (id, listing_id, recycler_id, message, status `pendente|aceite|recusada|retirada`, UNIQUE(listing_id,recycler_id))
 - `collection_records` (id, listing_id, recycler_id, citizen_id, weights_json, collected_at)
+- `ratings` (id, listing_id, rater_id, rated_id, stars 1-5, comment, UNIQUE(listing_id,rater_id))
 - `workshops`, `workshop_signups` (now with nullable `user_id`)
 
 ## Routes
@@ -87,8 +89,13 @@ Recycler (`requireRole('reciclador')`): `/painel`, `/perfil` (+POST),
 `/anuncios` (board, `?todos=1`), `POST /anuncios/:id/reivindicar`,
 `POST /claims/:id/retirar`.
 Shared: `/anuncios/:id` (detail; privacy-gated contact),
-`/anuncios/:id/concluir` (+POST → collection_records).
+`/anuncios/:id/concluir` (+POST → collection_records),
+`POST /anuncios/:id/avaliar` (mutual rating, only after a confirmed recolha).
 Admin (`requireRole('admin')`): `/admin`, `POST /admin/recicladores/:userId/verificar|recusar`.
+
+**Rating rule**: only the two parties of a **concluded** recolha may rate, each
+rates the other, once per anúncio. `domain/ratings.js` derives rater and rated —
+never trust a form field for either.
 
 **Privacy rule**: `listings.address` + citizen phone are revealed only to the
 owner and the accepted recycler. This lives entirely in `domain/visibility.js`
@@ -115,7 +122,10 @@ must never re-derive it — ask the module.
   viewport typo, hanging DB errors, unbuildable `sqlite3@4` (→ `node:sqlite`).
 - `node:sqlite` prints an `ExperimentalWarning` on start — expected.
 - Login throttle is in-memory (per process). CO₂e factors in `materials.js` are
-  placeholders. No email/SMS — match notifications & ratings are **Phase B**.
+  placeholders. No email/SMS — WhatsApp links and avaliações are done; what is
+  left of **Phase B** is automatic notification.
+- Nunjucks does **not** repeat strings (`"★" * n` is Jinja and yields `NaN`).
+  Stars are drawn with the `estrelas` filter registered in `server.js`.
 - The seed creates 4 concluded collections (49 kg, 5 flows across 3 recyclers)
   so `/impacto` is non-zero out of the box, plus 3 open listings chosen so that
   `reciclador1` and `reciclador2` each match one under the default board filter.
