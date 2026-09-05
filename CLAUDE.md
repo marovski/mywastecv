@@ -116,7 +116,9 @@ must never re-derive it — ask the module.
 - `node:sqlite` prints an `ExperimentalWarning` on start — expected.
 - Login throttle is in-memory (per process). CO₂e factors in `materials.js` are
   placeholders. No email/SMS — match notifications & ratings are **Phase B**.
-- Seed weights/collections make `/impacto` non-zero out of the box.
+- The seed creates 4 concluded collections (49 kg, 5 flows across 3 recyclers)
+  so `/impacto` is non-zero out of the box, plus 3 open listings chosen so that
+  `reciclador1` and `reciclador2` each match one under the default board filter.
 - Two housekeeping sweeps, both cheap and synchronous, no scheduler:
   `sweepExpired()` (server.js) marks past-`available_until` open listings
   `expirada` — runs at startup and at the top of `/painel`, `/anuncios`,

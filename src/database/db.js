@@ -67,6 +67,62 @@ function seedIfEmpty() {
         `).run(anaId, "Papéis e Papelão,Plástico", 8, "Palmarejo",
                "Rua Cabo Verde Telecom, casa 14",
                "Caixas de cartão e garrafões de plástico limpos. Podem levantar à tarde.")
+
+        // Mais duas ofertas abertas, escolhidas para caírem no filtro por
+        // omissão de um reciclador verificado — senão o board abre vazio.
+        const joaoOpen = db.prepare(`SELECT id FROM users WHERE email = 'joao@exemplo.cv'`).get().id
+        const addOpen = db.prepare(`
+            INSERT INTO listings (citizen_id, items, quantity_kg_est, zone, address, note)
+            VALUES (?, ?, ?, ?, ?, ?);
+        `)
+        // Platô + papel/eletrónicos: entra no board da Reciclagem Platô.
+        addOpen.run(joaoOpen, "Papéis e Papelão,Resíduos Eletrónicos", 15, "Platô",
+                    "Rua Serpa Pinto, casa 4",
+                    "Caixas de arquivo e um computador velho. Melhor de manhã.")
+        // Palmarejo + óleo/pilhas: entra no board da Eco Palmarejo.
+        addOpen.run(anaId, "Óleo de Cozinha,Pilhas e Baterias", 6, "Palmarejo",
+                    "Rua Cabo Verde Telecom, casa 14",
+                    "Garrafão de óleo usado e um saco de pilhas.")
+
+        // Recolhas já concluídas, para o /impacto não abrir a zeros.
+        // Cada uma é um anúncio fechado + o claim aceite + o registo de pesos.
+        const joaoId = db.prepare(`SELECT id FROM users WHERE email = 'joao@exemplo.cv'`).get().id
+        const recyclerId = (email) => db.prepare(`SELECT id FROM users WHERE email = ?`).get(email).id
+
+        const addDone = db.prepare(`
+            INSERT INTO listings (citizen_id, items, quantity_kg_est, zone, address, note, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'recolhida');
+        `)
+        const addClaim = db.prepare(`
+            INSERT INTO claims (listing_id, recycler_id, message, status)
+            VALUES (?, ?, ?, 'aceite');
+        `)
+        const addRecord = db.prepare(`
+            INSERT INTO collection_records (listing_id, recycler_id, citizen_id, weights_json, collected_at)
+            VALUES (?, ?, ?, ?, ?);
+        `)
+
+        const done = [
+            [joaoId, "reciclador1@noslixu.cv", "Papéis e Papelão,Resíduos Eletrónicos", "Platô",
+             "Rua Serpa Pinto, casa 4", "Arquivo antigo do escritório e dois monitores.",
+             { "Papéis e Papelão": 12.5, "Resíduos Eletrónicos": 3 }, "2026-07-14 10:30"],
+            [anaId, "reciclador2@noslixu.cv", "Óleo de Cozinha,Pilhas e Baterias", "Palmarejo",
+             "Rua Cabo Verde Telecom, casa 14", "Óleo do restaurante e pilhas juntadas em casa.",
+             { "Óleo de Cozinha": 5, "Pilhas e Baterias": 1.5 }, "2026-08-02 16:00"],
+            [joaoId, "reciclador1@noslixu.cv", "Papéis e Papelão", "Platô",
+             "Rua Serpa Pinto, casa 4", "Jornais e revistas.",
+             { "Papéis e Papelão": 9 }, "2026-08-21 09:15"],
+            [anaId, "reciclador3@noslixu.cv", "Resíduos Orgânicos", "Achada Santo António",
+             "Avenida OUA, junto ao mercado", "Restos de fruta e legumes da banca.",
+             { "Resíduos Orgânicos": 18 }, "2026-08-28 07:40"]
+        ]
+
+        for (const [citizenId, email, items, zone, address, note, weights, collectedAt] of done) {
+            const recycler = recyclerId(email)
+            const listingId = addDone.run(citizenId, items, null, zone, address, note).lastInsertRowid
+            addClaim.run(listingId, recycler, "Passamos a recolher.")
+            addRecord.run(listingId, recycler, citizenId, JSON.stringify(weights), collectedAt)
+        }
     }
 
     const workshopCount = db.prepare(`SELECT COUNT(*) AS total FROM workshops`).get().total
