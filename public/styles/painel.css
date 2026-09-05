@@ -96,6 +96,16 @@ form.auth-form + p, .owner-actions form { display: inline-block; }
 
 .muted { color: #999; }
 
+/* Botão de aviso por WhatsApp (cor da marca WhatsApp, para ser reconhecível). */
+.btn-wa {
+    display: inline-block;
+    background: #25d366;
+    color: #fff;
+    margin-top: 8px;
+}
+
+.btn-wa:hover { background: #1da851; }
+
 .field-hint {
     margin: 4px 0 0;
     font-size: 13px;
