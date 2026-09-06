@@ -51,6 +51,7 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 | `domain/listings.js` | the anúncio lifecycle: `claim`/`accept`/`withdraw`/`expire`/`conclude`/`sweepExpired` |
 | `domain/visibility.js` | who may see what on an anúncio (the privacy rule) — `forListing(db, id, viewer)` |
 | `domain/match.js` | recycler profile ↔ anúncio matching; owns the CSV storage format |
+| `domain/profile.js` | validates the `/perfil` form — coordinate pairing, trims text fields |
 | `domain/impacto.js` | the public impact metrics — `metrics(db)` |
 | `domain/ratings.js` | mutual avaliações after a recolha — who may rate whom, and the averages |
 | `domain/admin.js` | recycler verification + workshop signups for the team |
@@ -74,7 +75,7 @@ locals. Multipart routes run `listingPhoto` **before** `verifyCsrf` (so
 ## Schema (`recyclers` table removed; DB is disposable)
 
 - `users` (id, role `cidadao|reciclador|admin`, name, email UNIQUE, phone, zone, password_hash)
-- `recycler_profiles` (user_id PK, org_name, description, accepted_items csv, service_zones csv, does_pickup, does_dropoff, hours, image, address, verified_at)
+- `recycler_profiles` (user_id PK, org_name, **contact_name** (pessoa responsável), description, accepted_items csv, service_zones csv, does_pickup, does_dropoff, hours, image, address, **latitude, longitude** (both nullable — a pair or neither, never one alone), verified_at)
 - `listings` (id, citizen_id, items csv, quantity_kg_est, zone, **address** (private), photo_path, note, status `aberta|reservada|recolhida|expirada`, available_until)
 - `listings.status` now includes `removida` (admin-removed); `listings.moderation_reason`
   holds why. **Requires a fresh database** — the `CHECK` constraint only
@@ -154,6 +155,12 @@ must never re-derive it — ask the module.
   on `/anuncios/:id` itself (admins can already view any anúncio there), not
   a separate admin page; `admin.moderatedListings(db)` is the read side, for
   the "Anúncios removidos" table on `/admin`.
+- A recycler's sede location is manual `latitude`/`longitude` inputs, not a
+  geocoding service — the project has no external-API dependencies and this
+  keeps it that way. `public/scripts/geolocate.js` offers a "use my current
+  location" button via the browser's own Geolocation API; nothing is sent to
+  a third party. `domain/profile.js` requires both coordinates or neither —
+  never validate one without the other.
 - Destructive admin forms carry `data-confirm="…"`; `public/scripts/confirm.js`
   turns that into a confirmation prompt (no inline handlers).
 - `impacto.citizens` needs `CAST(citizen_id AS TEXT)`: in a SQLite `UNION` the

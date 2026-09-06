@@ -21,6 +21,7 @@ function createSchema(db) {
     CREATE TABLE IF NOT EXISTS recycler_profiles (
         user_id        INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         org_name       TEXT,
+        contact_name   TEXT,
         description    TEXT,
         accepted_items TEXT,
         service_zones  TEXT,
@@ -29,6 +30,8 @@ function createSchema(db) {
         hours          TEXT,
         image          TEXT,
         address        TEXT,
+        latitude       REAL,
+        longitude      REAL,
         verified_at    TEXT
     );
 

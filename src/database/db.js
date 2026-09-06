@@ -25,35 +25,42 @@ function seedIfEmpty() {
         `)
         const addProfile = db.prepare(`
             INSERT INTO recycler_profiles
-                (user_id, org_name, description, accepted_items, service_zones, does_pickup, does_dropoff, hours, image, address, verified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+                (user_id, org_name, contact_name, description, accepted_items, service_zones,
+                 does_pickup, does_dropoff, hours, image, address, latitude, longitude, verified_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
         `)
 
         addUser.run("admin", "Equipa Nôs Lixu", "admin@noslixu.cv", null, "Platô", pw)
 
+        // Latitude/longitude são opcionais: só dois dos quatro têm — para o
+        // seed também mostrar como fica um perfil sem localização.
         const recyclers = [
             ["Reciclagem Platô", "reciclador1@noslixu.cv", "2389000001", "Platô",
+             "Beto Fortes",
              "Recolha de papel e eletrónicos no centro da cidade.",
              "Papéis e Papelão,Resíduos Eletrónicos", "Platô,Prainha,Fazenda", 1, 1,
-             "Seg-Sex 08:00-16:00", null, "Rua Serpa Pinto, N° 12"],
+             "Seg-Sex 08:00-16:00", null, "Rua Serpa Pinto, N° 12", 14.9177, -23.5092],
             ["Eco Palmarejo", "reciclador2@noslixu.cv", "2389000002", "Palmarejo",
+             "Nazaré Andrade",
              "Pilhas, lâmpadas e óleo alimentar usado.",
              "Pilhas e Baterias,Lâmpadas,Óleo de Cozinha", "Palmarejo,Palmarejo Grande,Achada Santo António", 1, 1,
-             "Seg-Sáb 09:00-18:00", null, "Avenida OUA, Bloco B"],
+             "Seg-Sáb 09:00-18:00", null, "Avenida OUA, Bloco B", 14.9331, -23.5169],
             ["Verde Achada Santo António", "reciclador3@noslixu.cv", "2389000003", "Achada Santo António",
+             null,
              "Compostagem e recolha de orgânicos e óleo.",
              "Resíduos Orgânicos,Óleo de Cozinha", "Achada Santo António,Terra Branca,Tira Chapéu", 1, 0,
-             "Seg-Sex 07:00-15:00", null, "Rua da Liberdade, junto ao mercado"],
+             "Seg-Sex 07:00-15:00", null, "Rua da Liberdade, junto ao mercado", null, null],
             ["Cantinho C Terra Branca", "reciclador4@noslixu.cv", "2389000004", "Terra Branca",
+             null,
              "Ponto de entrega para plástico, metal, papel e eletrónicos.",
              "Plástico,Metal / Latas,Papéis e Papelão,Resíduos Eletrónicos,Pilhas e Baterias",
              "Terra Branca,Calabaceira,Safende,Vila Nova", 0, 1,
-             "Seg-Sáb 08:00-17:00", null, "Estrada de Terra Branca, Armazém 3"]
+             "Seg-Sáb 08:00-17:00", null, "Estrada de Terra Branca, Armazém 3", null, null]
         ]
         for (const r of recyclers) {
-            const [org, email, phone, zone, desc, items, svcZones, pickup, dropoff, hours, image, addr] = r
+            const [org, email, phone, zone, contactName, desc, items, svcZones, pickup, dropoff, hours, image, addr, lat, lng] = r
             const info = addUser.run("reciclador", org, email, phone, zone, pw)
-            addProfile.run(info.lastInsertRowid, org, desc, items, svcZones, pickup, dropoff, hours, image, addr)
+            addProfile.run(info.lastInsertRowid, org, contactName, desc, items, svcZones, pickup, dropoff, hours, image, addr, lat, lng)
         }
 
         addUser.run("cidadao", "Ana Tavares", "ana@exemplo.cv", "2389111111", "Palmarejo", pw)
