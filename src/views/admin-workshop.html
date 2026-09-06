@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set pageId = "page-painel" %}
 {% block title %}<title>{% if workshop %}Editar workshop{% else %}Novo workshop{% endif %} — Nôs Lixu</title>{% endblock title %}
-{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/forms.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
 
 {% block content %}
     {% include "partials/nav.html" %}
@@ -13,23 +13,23 @@
         </header>
 
         {% if errors %}
-            <ul class="form-errors">
+            <ul class="form-errors" role="alert">
                 {% for e in errors %}<li>{{ e }}</li>{% endfor %}
             </ul>
         {% endif %}
 
-        <form method="POST" class="stacked-form"
+        <form method="POST" class="auth-form"
               action="{% if workshop %}/admin/workshops/{{ workshop.id }}{% else %}/admin/workshops{% endif %}">
             {% include "partials/csrf.html" %}
 
-            <label for="title">Título</label>
+            <label for="title">Título <span class="req" aria-hidden="true">*</span></label>
             <input type="text" id="title" name="title" maxlength="120" required
                    value="{{ values.title or '' }}">
 
             <label for="description">Descrição</label>
             <textarea id="description" name="description" rows="4">{{ values.description or '' }}</textarea>
 
-            <label for="date">Data e hora</label>
+            <label for="date">Data e hora <span class="req" aria-hidden="true">*</span></label>
             <input type="datetime-local" id="date" name="date" required
                    value="{{ (values.date or '') | replace(' ', 'T') }}">
 
@@ -41,7 +41,7 @@
                 {% endfor %}
             </select>
 
-            <label for="capacity">Lugares</label>
+            <label for="capacity">Lugares <span class="req" aria-hidden="true">*</span></label>
             <input type="number" id="capacity" name="capacity" min="1" step="1" required
                    value="{{ values.capacity or 30 }}">
 

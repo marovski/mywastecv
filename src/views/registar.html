@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set pageId = "page-auth" %}
 {% block title %}<title>Criar conta — Nôs Lixu</title>{% endblock title %}
-{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/auth.css">{% endblock styles %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/forms.css">{% endblock styles %}
 
 {% block content %}
     {% include "partials/nav.html" %}
@@ -12,7 +12,7 @@
             <p>Junte-se ao movimento de reciclagem da Praia.</p>
         </header>
 
-        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        {% if errors %}<ul class="form-errors" role="alert">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
 
         <form action="/registar" method="POST" class="auth-form">
             {% include "partials/csrf.html" %}
@@ -28,28 +28,30 @@
                 </label>
             </fieldset>
 
-            <label for="name">Nome</label>
-            <input type="text" name="name" id="name" value="{{ values.name }}" required>
+            <label for="name">Nome <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" name="name" id="name" value="{{ values.name }}" required autocomplete="name">
 
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" value="{{ values.email }}" required>
+            <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+            <input type="email" name="email" id="email" value="{{ values.email }}" required autocomplete="email">
 
             <label for="phone">Telefone / WhatsApp</label>
-            <input type="text" name="phone" id="phone" value="{{ values.phone }}" placeholder="238 000 00 00">
+            <input type="text" name="phone" id="phone" value="{{ values.phone }}" placeholder="238 000 00 00"
+                   inputmode="tel" autocomplete="tel">
 
-            <label for="zone">Zona da Praia</label>
+            <label for="zone">Zona da Praia <span class="req" aria-hidden="true">*</span></label>
             <select name="zone" id="zone" required>
                 <option value="">Selecione a zona</option>
                 {% for z in zones %}<option value="{{ z }}" {{ 'selected' if values.zone == z }}>{{ z }}</option>{% endfor %}
             </select>
 
-            <label for="password">Password (mín. 8 caracteres)</label>
-            <input type="password" name="password" id="password" required>
+            <label for="password">Password <span class="req" aria-hidden="true">*</span></label>
+            <input type="password" name="password" id="password" required minlength="8" autocomplete="new-password">
+            <p class="field-hint">Mínimo de 8 caracteres.</p>
 
-            <label for="password2">Confirmar password</label>
-            <input type="password" name="password2" id="password2" required>
+            <label for="password2">Confirmar password <span class="req" aria-hidden="true">*</span></label>
+            <input type="password" name="password2" id="password2" required minlength="8" autocomplete="new-password">
 
-            <button type="submit">Criar conta</button>
+            <button class="btn" type="submit">Criar conta</button>
         </form>
 
         <p>Já tem conta? <a href="/entrar">Entrar</a></p>

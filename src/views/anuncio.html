@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set pageId = "page-painel" %}
 {% block title %}<title>Anúncio — Nôs Lixu</title>{% endblock title %}
-{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/forms.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
 
 {% block content %}
     {% include "partials/nav.html" %}
@@ -130,7 +130,7 @@
                         {% elif c.status == 'pendente' and listing.status == 'aberta' %}
                             <form action="/anuncios/{{ listing.id }}/claims/{{ c.id }}/aceitar" method="POST">
                                 {% include "partials/csrf.html" %}
-                                <button type="submit">Aceitar este reciclador</button>
+                                <button class="btn" type="submit">Aceitar este reciclador</button>
                             </form>
                         {% endif %}
                     </div>
@@ -171,7 +171,7 @@
                     {% include "partials/csrf.html" %}
                     <label for="message">Mensagem para o cidadão (opcional)</label>
                     <textarea name="message" id="message" rows="2"></textarea>
-                    <button type="submit">Reivindicar anúncio</button>
+                    <button class="btn" type="submit">Reivindicar anúncio</button>
                 </form>
             {% endif %}
         {% endif %}

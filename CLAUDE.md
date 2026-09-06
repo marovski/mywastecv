@@ -131,6 +131,22 @@ must never re-derive it — ask the module.
   handlers translate that with `renderFail(res, result)`.
 - Geo values validated against `data/praia-zones.js`; materials against `data/materials.js`.
 - Views extend `layout.html`; interior pages `{% include "partials/nav.html" %}`.
+- **Every form uses `class="auth-form"`**, styled once in `public/styles/forms.css`
+  — labels, inputs, `fieldset`/`legend`, the `.checklist` grid for checkbox lists,
+  focus rings, `.form-errors`. Never write form-specific CSS in another
+  stylesheet (`content-page.css`, `painel.css`) or on a per-page basis — extend
+  `forms.css` instead. A page with a form **must** link `forms.css`, even if it
+  also loads `painel.css`; forgetting this was a real, long-standing bug (see
+  Notes below) — nothing catches it automatically.
+- **Every submit button and action link uses `class="btn"` (primary) or
+  `class="btn btn-ghost"` (secondary)** — defined once in `main.css`, since it
+  is used both inside and outside forms and must be available on every page,
+  including the two (`entrar`, `registar`) that don't load `painel.css`. Never
+  leave a `<button type="submit">` unclassed.
+- Required fields get `<span class="req" aria-hidden="true">*</span>` after the
+  label text, alongside the native `required` attribute — the attribute is
+  what assistive tech and browser validation actually use; the span is purely
+  visual, hence `aria-hidden`.
 
 ## Notes / caveats
 
@@ -168,6 +184,18 @@ must never re-derive it — ask the module.
   donated and signed up for a workshop would be counted twice.
 - Nunjucks does **not** repeat strings (`"★" * n` is Jinja and yields `NaN`).
   Stars are drawn with the `estrelas` filter registered in `server.js`.
+- `forms.css` was `auth.css` until it was found that four pages
+  (`anuncio-novo`, `coleta-confirmar`, `perfil-reciclador`, the claim form on
+  `anuncio`) used `class="auth-form"` but never linked the stylesheet that
+  styles it — the name "auth" read as login/register-only, so nobody noticed
+  those pages needed it too. They rendered with bare, unstyled browser
+  controls in production. Same root cause left most primary submit buttons
+  app-wide unclassed (`.btn` lived only in `painel.css`, which two of the
+  affected pages don't even load). Fixed by renaming the file to what it
+  actually does, moving `.btn`/`.btn-ghost`/`.btn-wa` to `main.css` (loaded by
+  every page), and auditing every `<form>` and `<button type="submit">` in the
+  app. If a form ever looks unstyled again, check its `{% block styles %}`
+  for `forms.css` before anything else.
 - The seed creates 4 concluded collections (49 kg, 5 flows across 3 recyclers)
   so `/impacto` is non-zero out of the box, plus 3 open listings chosen so that
   `reciclador1` and `reciclador2` each match one under the default board filter.

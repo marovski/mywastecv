@@ -66,4 +66,17 @@ function zoneFilterSql(column) {
     return `(',' || ${column} || ',') LIKE ('%,' || ? || ',%')`
 }
 
-module.exports = { parse, serialise, knownItems, servesZone, acceptsItems, accepts, zoneFilterSql }
+// Separa a lista de materiais em anunciados/restantes, na mesma ordem de
+// `allMaterials`. Usado pela confirmação de recolha para mostrar primeiro
+// o que já se esperava, e o resto só se for preciso.
+function splitByAnnounced(itemsCsv, allMaterials) {
+    const announced = new Set(decode(itemsCsv))
+    return {
+        announcedMaterials: allMaterials.filter(m => announced.has(m.label)),
+        otherMaterials: allMaterials.filter(m => !announced.has(m.label))
+    }
+}
+
+module.exports = {
+    parse, serialise, knownItems, servesZone, acceptsItems, accepts, zoneFilterSql, splitByAnnounced
+}

@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set pageId = "page-painel" %}
 {% block title %}<title>Confirmar recolha — Nôs Lixu</title>{% endblock title %}
-{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/forms.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
 
 {% block content %}
     {% include "partials/nav.html" %}
@@ -14,20 +14,29 @@
             <p>Indique o peso efetivamente recolhido de cada material. Estes valores alimentam o painel de impacto.</p>
         </header>
 
-        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        {% if errors %}<ul class="form-errors" role="alert">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
 
         <form action="/anuncios/{{ listing.id }}/concluir" method="POST" class="auth-form">
             {% include "partials/csrf.html" %}
 
-            {% set anunciados = listing.items.split(",") %}
-            {% for m in materials %}
-                <label for="w-{{ loop.index }}">
-                    {{ m.label }}{% if m.label in anunciados %} <span class="muted">(anunciado)</span>{% endif %} — kg
-                </label>
-                <input type="number" id="w-{{ loop.index }}" name="weight_{{ m.label }}" min="0" step="0.1" value="0">
+            {% for m in announcedMaterials %}
+                <label for="w-{{ loop.index }}">{{ m.label }} — kg</label>
+                <input type="number" id="w-{{ loop.index }}" name="weight_{{ m.label }}" min="0" step="0.1"
+                       value="" placeholder="0.0" inputmode="decimal">
             {% endfor %}
 
-            <button type="submit">Registar recolha</button>
+            {% if otherMaterials.length %}
+                <details class="other-materials">
+                    <summary>Recolheu algum material não anunciado?</summary>
+                    {% for m in otherMaterials %}
+                        <label for="w-o-{{ loop.index }}">{{ m.label }} — kg</label>
+                        <input type="number" id="w-o-{{ loop.index }}" name="weight_{{ m.label }}" min="0" step="0.1"
+                               value="" placeholder="0.0" inputmode="decimal">
+                    {% endfor %}
+                </details>
+            {% endif %}
+
+            <button class="btn" type="submit">Registar recolha</button>
         </form>
     </main>
 {% endblock content %}

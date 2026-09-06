@@ -62,3 +62,23 @@ test("knownItems: filtra materiais desconhecidos e devolve uma lista", () => {
     assert.deepStrictEqual(match.knownItems("Vidro"), ["Vidro"])
     assert.deepStrictEqual(match.knownItems(undefined), [])
 })
+
+test("splitByAnnounced: separa anunciados dos restantes, mantendo a ordem de allMaterials", () => {
+    const all = [{ label: "Vidro" }, { label: "Plástico" }, { label: "Metal / Latas" }]
+    const r = match.splitByAnnounced("Metal / Latas,Vidro", all)
+    assert.deepStrictEqual(r.announcedMaterials.map(m => m.label), ["Vidro", "Metal / Latas"])
+    assert.deepStrictEqual(r.otherMaterials.map(m => m.label), ["Plástico"])
+})
+
+test("splitByAnnounced: sem itens, tudo cai em otherMaterials", () => {
+    const all = [{ label: "Vidro" }, { label: "Plástico" }]
+    const r = match.splitByAnnounced("", all)
+    assert.deepStrictEqual(r.announcedMaterials, [])
+    assert.strictEqual(r.otherMaterials.length, 2)
+})
+
+test("splitByAnnounced: todos anunciados, otherMaterials fica vazio", () => {
+    const all = [{ label: "Vidro" }, { label: "Plástico" }]
+    const r = match.splitByAnnounced("Vidro,Plástico", all)
+    assert.strictEqual(r.otherMaterials.length, 0)
+})

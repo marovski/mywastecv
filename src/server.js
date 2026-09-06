@@ -201,7 +201,7 @@ server.post("/entrar", verifyCsrf, (req, res) => {
 
     if (loginBlocked(key)) {
         return res.status(429).render("entrar.html", {
-            next: dest, errors: ["Demasiadas tentativas. Aguarde 15 minutos."]
+            next: dest, email, errors: ["Demasiadas tentativas. Aguarde 15 minutos."]
         })
     }
 
@@ -211,7 +211,8 @@ server.post("/entrar", verifyCsrf, (req, res) => {
 
     if (!user || !verifyPassword(password || "", user.password_hash)) {
         registerFailedLogin(key)
-        return res.status(401).render("entrar.html", { next: dest, errors: ["Email ou password incorretos."] })
+        // A password nunca volta — só o email, para não ter de o reescrever.
+        return res.status(401).render("entrar.html", { next: dest, email, errors: ["Email ou password incorretos."] })
     }
 
     clearLoginAttempts(key)
@@ -475,7 +476,7 @@ server.get("/anuncios/:id/concluir", requireAuth, (req, res) => {
         if (!view.canConclude) {
             return res.status(403).render("error.html", { message: "Só é possível concluir um anúncio reservado." })
         }
-        return res.render("coleta-confirmar.html", { listing: view.listing })
+        return res.render("coleta-confirmar.html", Object.assign({ listing: view.listing }, match.splitByAnnounced(view.listing.items, materials)))
     } catch (err) {
         return serverError(res, err)
     }
@@ -489,9 +490,10 @@ server.post("/anuncios/:id/concluir", requireAuth, verifyCsrf, (req, res) => {
         // Falta de pesos volta ao formulário; o resto é uma página de erro.
         if (result.status !== 400) return renderFail(res, result)
         const view = visibility.forListing(db, req.params.id, res.locals.currentUser)
-        return res.status(400).render("coleta-confirmar.html", {
-            listing: view.listing, errors: [result.message]
-        })
+        return res.status(400).render("coleta-confirmar.html", Object.assign(
+            { listing: view.listing, errors: [result.message] },
+            match.splitByAnnounced(view.listing.items, materials)
+        ))
     } catch (err) {
         return serverError(res, err)
     }

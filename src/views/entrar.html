@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set pageId = "page-auth" %}
 {% block title %}<title>Entrar — Nôs Lixu</title>{% endblock title %}
-{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/auth.css">{% endblock styles %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/forms.css">{% endblock styles %}
 
 {% block content %}
     {% include "partials/nav.html" %}
@@ -11,19 +11,19 @@
             <h1>Entrar</h1>
         </header>
 
-        {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        {% if errors %}<ul class="form-errors" role="alert">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
 
         <form action="/entrar" method="POST" class="auth-form">
             {% include "partials/csrf.html" %}
             <input type="hidden" name="next" value="{{ next }}">
 
-            <label for="email">Email</label>
-            <input type="email" name="email" id="email" required autofocus>
+            <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+            <input type="email" name="email" id="email" value="{{ email }}" required autofocus autocomplete="email">
 
-            <label for="password">Password</label>
-            <input type="password" name="password" id="password" required>
+            <label for="password">Password <span class="req" aria-hidden="true">*</span></label>
+            <input type="password" name="password" id="password" required autocomplete="current-password">
 
-            <button type="submit">Entrar</button>
+            <button class="btn" type="submit">Entrar</button>
         </form>
 
         <p>Ainda não tem conta? <a href="/registar">Criar conta</a></p>
