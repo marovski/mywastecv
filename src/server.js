@@ -35,6 +35,7 @@ const visibility = require("./domain/visibility")
 const match = require("./domain/match")
 const impacto = require("./domain/impacto")
 const ratings = require("./domain/ratings")
+const admin = require("./domain/admin")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -490,28 +491,35 @@ server.post("/anuncios/:id/avaliar", requireAuth, verifyCsrf, (req, res) => {
 // Admin — verificação de recicladores
 // =====================================================================
 server.get("/admin", requireRole("admin"), (req, res) => {
-    const pending = db.prepare(`
-        SELECT u.id, u.name, u.email, u.phone, u.zone, p.*
-        FROM users u JOIN recycler_profiles p ON p.user_id = u.id
-        WHERE u.role = 'reciclador' AND p.verified_at IS NULL
-        ORDER BY u.created_at
-    `).all()
-    const verified = db.prepare(`
-        SELECT u.name, u.email, p.verified_at
-        FROM users u JOIN recycler_profiles p ON p.user_id = u.id
-        WHERE p.verified_at IS NOT NULL ORDER BY p.verified_at DESC
-    `).all()
-    res.render("admin.html", { pending, verified })
+    try {
+        return res.render("admin.html", {
+            pending: admin.pendingRecyclers(db),
+            verified: admin.verifiedRecyclers(db),
+            workshops: admin.workshopsWithSignups(db)
+        })
+    } catch (err) {
+        return serverError(res, err)
+    }
 })
 
 server.post("/admin/recicladores/:userId/verificar", requireRole("admin"), verifyCsrf, (req, res) => {
-    db.prepare(`UPDATE recycler_profiles SET verified_at = CURRENT_TIMESTAMP WHERE user_id = ?`).run(req.params.userId)
-    res.redirect("/admin")
+    try {
+        const result = admin.verify(db, req.params.userId)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
 })
 
 server.post("/admin/recicladores/:userId/recusar", requireRole("admin"), verifyCsrf, (req, res) => {
-    db.prepare(`UPDATE recycler_profiles SET verified_at = NULL WHERE user_id = ?`).run(req.params.userId)
-    res.redirect("/admin")
+    try {
+        const result = admin.revoke(db, req.params.userId)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
 })
 
 // =====================================================================

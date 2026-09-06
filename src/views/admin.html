@@ -8,25 +8,27 @@
 
     <main>
         <header class="page-head">
-            <h1>Verificação de recicladores</h1>
-            <p>Aprovar recicladores para que possam reivindicar anúncios e aparecer no diretório público.</p>
+            <h1>Administração</h1>
+            <p>Verificar recicladores e acompanhar as inscrições nos workshops.</p>
         </header>
 
-        <h2>Por verificar ({{ pending.length }})</h2>
+        <h2>Recicladores por verificar ({{ pending.length }})</h2>
+        <p class="muted">Só recicladores verificados podem reivindicar anúncios e aparecer no diretório público.</p>
         {% if pending.length == 0 %}
             <p>Nada pendente.</p>
         {% else %}
             <table class="data-table">
-                <thead><tr><th>Nome</th><th>Email</th><th>Zonas</th><th>Materiais</th><th></th></tr></thead>
+                <thead><tr><th>Nome</th><th>Contacto</th><th>Zonas</th><th>Materiais</th><th></th></tr></thead>
                 <tbody>
                 {% for r in pending %}
                     <tr>
                         <td>{{ r.org_name or r.name }}</td>
-                        <td>{{ r.email }}</td>
+                        <td>{{ r.email }}{% if r.phone %}<br><span class="muted">{{ r.phone }}</span>{% endif %}</td>
                         <td>{{ r.service_zones or "—" }}</td>
                         <td>{{ r.accepted_items or "—" }}</td>
                         <td>
-                            <form action="/admin/recicladores/{{ r.id }}/verificar" method="POST">
+                            <form action="/admin/recicladores/{{ r.id }}/verificar" method="POST"
+                                  data-confirm="Verificar {{ r.org_name or r.name }}? Passa a poder reivindicar anúncios.">
                                 {% include "partials/csrf.html" %}
                                 <button type="submit">Verificar</button>
                             </form>
@@ -37,14 +39,65 @@
             </table>
         {% endif %}
 
-        <h2>Verificados ({{ verified.length }})</h2>
-        <table class="data-table">
-            <thead><tr><th>Nome</th><th>Email</th><th>Desde</th></tr></thead>
-            <tbody>
-            {% for r in verified %}
-                <tr><td>{{ r.name }}</td><td>{{ r.email }}</td><td>{{ r.verified_at }}</td></tr>
+        <h2>Recicladores verificados ({{ verified.length }})</h2>
+        {% if verified.length == 0 %}
+            <p>Ainda não há recicladores verificados.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Nome</th><th>Contacto</th><th>Zonas</th><th>Desde</th><th></th></tr></thead>
+                <tbody>
+                {% for r in verified %}
+                    <tr>
+                        <td>{{ r.org_name or r.name }}</td>
+                        <td>{{ r.email }}{% if r.phone %}<br><span class="muted">{{ r.phone }}</span>{% endif %}</td>
+                        <td>{{ r.service_zones or "—" }}</td>
+                        <td>{{ r.verified_at }}</td>
+                        <td>
+                            <form action="/admin/recicladores/{{ r.id }}/recusar" method="POST"
+                                  data-confirm="Retirar a verificação a {{ r.org_name or r.name }}? Deixa de poder reivindicar anúncios e sai do diretório público.">
+                                {% include "partials/csrf.html" %}
+                                <button class="btn-ghost" type="submit">Retirar verificação</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <h2>Inscrições em workshops</h2>
+        {% if workshops.length == 0 %}
+            <p>Ainda não há workshops.</p>
+        {% else %}
+            {% for w in workshops %}
+                <section class="workshop-signups">
+                    <h3>{{ w.title }}</h3>
+                    <p class="muted">
+                        {{ w.date }}{% if w.zone %} · {{ w.zone }}{% endif %} ·
+                        {{ w.total }} de {{ w.capacity }} lugares
+                        {% if w.spotsLeft == 0 %}<strong>(lotado)</strong>{% else %}({{ w.spotsLeft }} por ocupar){% endif %}
+                    </p>
+                    {% if w.total == 0 %}
+                        <p>Sem inscrições.</p>
+                    {% else %}
+                        <table class="data-table">
+                            <thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Inscrito em</th></tr></thead>
+                            <tbody>
+                            {% for s in w.signups %}
+                                <tr>
+                                    <td>{{ s.name }}{% if not s.user_id %} <span class="muted">(sem conta)</span>{% endif %}</td>
+                                    <td>{{ s.email }}</td>
+                                    <td>{{ s.phone or "—" }}</td>
+                                    <td>{{ s.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </section>
             {% endfor %}
-            </tbody>
-        </table>
+        {% endif %}
     </main>
+
+    <script src="/scripts/confirm.js" defer></script>
 {% endblock content %}
