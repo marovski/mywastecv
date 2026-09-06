@@ -36,6 +36,13 @@
                     <div class="card">
                         {% if place.image %}<img src="{{ place.image }}" alt="{{ place.org_name }}">{% endif %}
                         <h1>{{ place.org_name or place.name }}</h1>
+                        {% set score = ratings[place.user_id] %}
+                        {% if score %}
+                            <p class="rating-summary">
+                                <span class="stars">{{ score.average | estrelas }}</span>
+                                {{ score.average }} <span class="muted">({{ score.count }})</span>
+                            </p>
+                        {% endif %}
                         <h3>{{ place.accepted_items }}</h3>
                         <p>
                             {% if place.description %}{{ place.description }}<br>{% endif %}

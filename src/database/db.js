@@ -117,11 +117,32 @@ function seedIfEmpty() {
              { "Resíduos Orgânicos": 18 }, "2026-08-28 07:40"]
         ]
 
+        const doneIds = []
         for (const [citizenId, email, items, zone, address, note, weights, collectedAt] of done) {
             const recycler = recyclerId(email)
             const listingId = addDone.run(citizenId, items, null, zone, address, note).lastInsertRowid
             addClaim.run(listingId, recycler, "Passamos a recolher.")
             addRecord.run(listingId, recycler, citizenId, JSON.stringify(weights), collectedAt)
+            doneIds.push({ listingId, recycler, citizenId })
+        }
+
+        // Avaliações de exemplo. A última recolha fica por avaliar, para o
+        // formulário aparecer a quem entrar com uma das contas de exemplo.
+        const addRating = db.prepare(`
+            INSERT INTO ratings (listing_id, rater_id, rated_id, stars, comment)
+            VALUES (?, ?, ?, ?, ?);
+        `)
+        const reviews = [
+            [0, "cidadao", 5, "Chegaram à hora combinada e levaram tudo."],
+            [0, "reciclador", 5, "Material bem separado, muito fácil."],
+            [1, "cidadao", 4, "Correu bem, só demoraram um pouco a responder."],
+            [2, "cidadao", 5, null]
+        ]
+        for (const [index, who, stars, comment] of reviews) {
+            const { listingId, recycler, citizenId } = doneIds[index]
+            const rater = who === "cidadao" ? citizenId : recycler
+            const rated = who === "cidadao" ? recycler : citizenId
+            addRating.run(listingId, rater, rated, stars, comment)
         }
     }
 

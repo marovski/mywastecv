@@ -68,6 +68,17 @@ function createSchema(db) {
         created_at   TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS ratings (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+        rater_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        rated_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        stars      INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 5),
+        comment    TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (listing_id, rater_id)
+    );
+
     CREATE TABLE IF NOT EXISTS workshops (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         title       TEXT NOT NULL,

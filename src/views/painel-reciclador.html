@@ -24,6 +24,25 @@
             {% if profile.does_pickup %}Faz recolha{% endif %}{% if profile.does_dropoff %} · Aceita entregas{% endif %}
         </p>
 
+        <h2>Avaliações</h2>
+        {% if rating.count == 0 %}
+            <p class="muted">Ainda não recebeu avaliações. Aparecem aqui depois de confirmar recolhas.</p>
+        {% else %}
+            <p class="rating-summary">
+                <span class="stars">{{ rating.average | estrelas }}</span>
+                <strong>{{ rating.average }}</strong> em {{ rating.count }} avaliaç{% if rating.count == 1 %}ão{% else %}ões{% endif %}
+            </p>
+            <ul class="reviews">
+                {% for review in reviews %}
+                    <li>
+                        <span class="stars">{{ review.stars | estrelas }}</span>
+                        {% if review.comment %}{{ review.comment }}{% endif %}
+                        <span class="muted">— {{ review.rater_name }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
         <h2>Os meus pedidos</h2>
         {% if claims.length == 0 %}
             <p>Ainda não reivindicou nenhum anúncio.</p>

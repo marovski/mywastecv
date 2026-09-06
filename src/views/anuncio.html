@@ -47,6 +47,30 @@
                 {% for label, kg in collection.weights %}<li>{{ label }}: {{ kg }} kg</li>{% endfor %}
             </ul>
             <p class="muted">Registada em {{ collection.collected_at }}.</p>
+
+            {# --- Avaliação entre as duas partes --- #}
+            {% if myRating %}
+                <p class="rating-done">
+                    A sua avaliação: <span class="stars">{{ myRating.stars | estrelas }}</span>
+                    {% if myRating.comment %}<span class="muted">— {{ myRating.comment }}</span>{% endif %}
+                </p>
+            {% elif canRate %}
+                <h3>Avaliar esta recolha</h3>
+                <form action="/anuncios/{{ listing.id }}/avaliar" method="POST" class="rating-form">
+                    {% include "partials/csrf.html" %}
+                    <label for="stars">Classificação</label>
+                    <select id="stars" name="stars" required>
+                        <option value="">Escolher…</option>
+                        {% for n in [5, 4, 3, 2, 1] %}
+                            <option value="{{ n }}">{{ n | estrelas }} ({{ n }})</option>
+                        {% endfor %}
+                    </select>
+                    <label for="comment">Comentário (opcional)</label>
+                    <input type="text" id="comment" name="comment" maxlength="200"
+                           placeholder="Correu tudo bem?">
+                    <button class="btn" type="submit">Enviar avaliação</button>
+                </form>
+            {% endif %}
         {% endif %}
 
         {# --- Ações do cidadão (dono) --- #}

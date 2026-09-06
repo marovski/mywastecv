@@ -34,6 +34,7 @@ const listings = require("./domain/listings")
 const visibility = require("./domain/visibility")
 const match = require("./domain/match")
 const impacto = require("./domain/impacto")
+const ratings = require("./domain/ratings")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -58,7 +59,14 @@ server.use(attachUser)
 server.use(csrfToken)
 
 const nunjucks = require("nunjucks")
-nunjucks.configure(path.join(__dirname, "views"), { express: server, noCache: !isProd })
+const templates = nunjucks.configure(path.join(__dirname, "views"), { express: server, noCache: !isProd })
+
+// Nunjucks não repete strings como o Jinja ("★" * n dá NaN), por isso o
+// desenho das estrelas é um filtro.
+templates.addFilter("estrelas", (value) => {
+    const filled = Math.max(0, Math.min(5, Math.round(Number(value) || 0)))
+    return "★".repeat(filled) + "☆".repeat(5 - filled)
+})
 
 server.use((req, res, next) => {
     res.locals.collaborators = collaborators
@@ -124,7 +132,9 @@ server.get("/recicladores", (req, res) => {
             `).all(zone)
             : db.prepare(base + ` ORDER BY u.name`).all()
 
-        return res.render("recicladores.html", { recyclers: rows, total: rows.length, zone })
+        return res.render("recicladores.html", {
+            recyclers: rows, total: rows.length, zone, ratings: ratings.summaryByUser(db)
+        })
     } catch (err) {
         return serverError(res, err)
     }
@@ -227,7 +237,11 @@ server.get("/painel", requireAuth, (req, res) => {
             const collections = db.prepare(`
                 SELECT * FROM collection_records WHERE recycler_id = ? ORDER BY created_at DESC
             `).all(user.id)
-            return res.render("painel-reciclador.html", { profile, claims, collections })
+            return res.render("painel-reciclador.html", {
+                profile, claims, collections,
+                rating: ratings.summaryFor(db, user.id),
+                reviews: ratings.listFor(db, user.id)
+            })
         }
 
         const listings = db.prepare(`
@@ -370,7 +384,14 @@ server.get("/anuncios/:id", requireAuth, (req, res) => {
         // pode ver e fazer neste anúncio. A privacidade não se decide aqui.
         const view = visibility.forListing(db, req.params.id, res.locals.currentUser)
         if (!view) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
-        return res.render("anuncio.html", view)
+
+        // A avaliação vive noutro módulo (que já depende deste), por isso é a
+        // rota que junta as duas respostas.
+        const user = res.locals.currentUser
+        return res.render("anuncio.html", Object.assign(view, {
+            canRate: ratings.canRate(db, view.listing.id, user.id).ok,
+            myRating: ratings.myRating(db, view.listing.id, user.id)
+        }))
     } catch (err) {
         return serverError(res, err)
     }
@@ -447,6 +468,19 @@ server.post("/anuncios/:id/concluir", requireAuth, verifyCsrf, (req, res) => {
         return res.status(400).render("coleta-confirmar.html", {
             listing: view.listing, errors: [result.message]
         })
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
+// Avaliação mútua, depois da recolha
+server.post("/anuncios/:id/avaliar", requireAuth, verifyCsrf, (req, res) => {
+    try {
+        const stars = Number.parseInt(req.body.stars, 10)
+        const result = ratings.rate(db, req.params.id, res.locals.currentUser.id,
+                                    Number.isNaN(stars) ? null : stars, req.body.comment)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect(`/anuncios/${req.params.id}`)
     } catch (err) {
         return serverError(res, err)
     }
