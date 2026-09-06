@@ -65,7 +65,8 @@
             </table>
         {% endif %}
 
-        <h2>Inscrições em workshops</h2>
+        <h2>Workshops e inscrições</h2>
+        <p><a class="btn" href="/admin/workshops/novo">Novo workshop</a></p>
         {% if workshops.length == 0 %}
             <p>Ainda não há workshops.</p>
         {% else %}
@@ -76,6 +77,14 @@
                         {{ w.date }}{% if w.zone %} · {{ w.zone }}{% endif %} ·
                         {{ w.total }} de {{ w.capacity }} lugares
                         {% if w.spotsLeft == 0 %}<strong>(lotado)</strong>{% else %}({{ w.spotsLeft }} por ocupar){% endif %}
+                    </p>
+                    <p class="workshop-actions">
+                        <a class="btn btn-ghost" href="/admin/workshops/{{ w.id }}/editar">Editar</a>
+                        <form action="/admin/workshops/{{ w.id }}/eliminar" method="POST"
+                              data-confirm="Eliminar &quot;{{ w.title }}&quot;?{% if w.total > 0 %} Apaga também as {{ w.total }} inscrições, sem forma de as recuperar.{% endif %}">
+                            {% include "partials/csrf.html" %}
+                            <button class="btn-ghost" type="submit">Eliminar</button>
+                        </form>
                     </p>
                     {% if w.total == 0 %}
                         <p>Sem inscrições.</p>
