@@ -20,6 +20,20 @@
 
         {% if errors %}<ul class="form-errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
 
+        {% if listing.status == 'removida' %}
+            <div class="notice warning">
+                <strong>Removido pela equipa Nôs Lixu.</strong>
+                {% if listing.moderation_reason %}<p>{{ listing.moderation_reason }}</p>{% endif %}
+                {% if isAdmin %}
+                    <form action="/anuncios/{{ listing.id }}/restaurar" method="POST"
+                          data-confirm="Restaurar este anúncio? Volta a aparecer no board dos recicladores.">
+                        {% include "partials/csrf.html" %}
+                        <button class="btn-ghost" type="submit">Restaurar</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
+
         {% if listing.photo_path %}<img class="listing-photo" src="{{ listing.photo_path }}" alt="">{% endif %}
         {% if listing.note %}<p>{{ listing.note }}</p>{% endif %}
         {% if listing.available_until %}<p><strong>Disponível até:</strong> {{ listing.available_until }}</p>{% endif %}
@@ -38,6 +52,19 @@
             </div>
         {% else %}
             <p class="muted">A morada e o contacto são revelados ao reciclador assim que o cidadão aceitar o pedido.</p>
+        {% endif %}
+
+        {% if isAdmin and listing.status == 'aberta' %}
+            <details class="admin-moderation">
+                <summary>Remover este anúncio</summary>
+                <form action="/anuncios/{{ listing.id }}/moderar" method="POST"
+                      data-confirm="Remover este anúncio? Sai do board dos recicladores.">
+                    {% include "partials/csrf.html" %}
+                    <label for="reason">Motivo (visível ao autor)</label>
+                    <textarea id="reason" name="reason" rows="2" required maxlength="300"></textarea>
+                    <button class="btn-ghost" type="submit">Remover anúncio</button>
+                </form>
+            </details>
         {% endif %}
 
         {# --- Recolha concluída --- #}

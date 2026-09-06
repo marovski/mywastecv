@@ -85,6 +85,32 @@
             </table>
         {% endif %}
 
+        <h2>Anúncios removidos ({{ moderated.length }})</h2>
+        {% if moderated.length == 0 %}
+            <p class="muted">Nenhum anúncio removido.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Motivo</th><th>Removido em</th><th></th></tr></thead>
+                <tbody>
+                {% for l in moderated %}
+                    <tr>
+                        <td><a href="/anuncios/{{ l.id }}">#{{ l.id }}</a> {{ l.items }}</td>
+                        <td>{{ l.citizen_name }}</td>
+                        <td>{{ l.moderation_reason }}</td>
+                        <td>{{ l.created_at }}</td>
+                        <td>
+                            <form action="/anuncios/{{ l.id }}/restaurar" method="POST"
+                                  data-confirm="Restaurar este anúncio? Volta a aparecer no board dos recicladores.">
+                                {% include "partials/csrf.html" %}
+                                <button class="btn-ghost" type="submit">Restaurar</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
         <h2>Recicladores por verificar ({{ pending.length }})</h2>
         <p class="muted">Só recicladores verificados podem reivindicar anúncios e aparecer no diretório público.</p>
         {% if pending.length == 0 %}

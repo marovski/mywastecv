@@ -169,3 +169,60 @@ test("accept: a transição é atómica — nada fica meio feito se falhar", () 
     assert.strictEqual(r.ok, false)
     assert.strictEqual(claimsOf(w.db, w.listing)[0].status, "pendente")
 })
+
+test("moderate: remove um anúncio aberto, com motivo", () => {
+    const w = world()
+    assert.strictEqual(listings.moderate(w.db, w.listing, "Conteúdo inapropriado.").ok, true)
+    assert.strictEqual(statusOf(w.db, w.listing), "removida")
+    assert.strictEqual(
+        w.db.prepare(`SELECT moderation_reason FROM listings WHERE id = ?`).get(w.listing).moderation_reason,
+        "Conteúdo inapropriado."
+    )
+})
+
+test("moderate: exige um motivo", () => {
+    const w = world()
+    for (const bad of [undefined, null, "", "   "]) {
+        const r = listings.moderate(w.db, w.listing, bad)
+        assert.strictEqual(r.status, 400, `reason=${JSON.stringify(bad)}`)
+    }
+    assert.strictEqual(statusOf(w.db, w.listing), "aberta")
+})
+
+test("moderate: só um anúncio aberto pode ser removido", () => {
+    const reservado = world({ listingStatus: "reservada" })
+    assert.strictEqual(listings.moderate(reservado.db, reservado.listing, "x").status, 400)
+    assert.strictEqual(statusOf(reservado.db, reservado.listing), "reservada")
+
+    const recolhido = world({ listingStatus: "recolhida" })
+    assert.strictEqual(listings.moderate(recolhido.db, recolhido.listing, "x").status, 400)
+})
+
+test("moderate: anúncio inexistente dá 404", () => {
+    const w = world()
+    assert.strictEqual(listings.moderate(w.db, 9999, "x").status, 404)
+})
+
+test("restore: devolve um anúncio removido ao board, sem o motivo", () => {
+    const w = world()
+    listings.moderate(w.db, w.listing, "Engano.")
+    assert.strictEqual(listings.restore(w.db, w.listing).ok, true)
+    assert.strictEqual(statusOf(w.db, w.listing), "aberta")
+    assert.strictEqual(
+        w.db.prepare(`SELECT moderation_reason FROM listings WHERE id = ?`).get(w.listing).moderation_reason,
+        null
+    )
+})
+
+test("restore: só um anúncio removido pode ser restaurado", () => {
+    const w = world()
+    assert.strictEqual(listings.restore(w.db, w.listing).status, 400)
+    assert.strictEqual(listings.restore(w.db, 9999).status, 404)
+})
+
+test("moderate: um anúncio removido some do board do reciclador", () => {
+    const w = world()
+    listings.moderate(w.db, w.listing, "x")
+    const open = w.db.prepare(`SELECT id FROM listings WHERE status = 'aberta'`).all()
+    assert.strictEqual(open.length, 0)
+})

@@ -388,12 +388,13 @@ server.get("/anuncios/:id", requireAuth, (req, res) => {
         const view = visibility.forListing(db, req.params.id, res.locals.currentUser)
         if (!view) return res.status(404).render("error.html", { message: "Anúncio não encontrado." })
 
-        // A avaliação vive noutro módulo (que já depende deste), por isso é a
-        // rota que junta as duas respostas.
+        // A avaliação e a moderação vivem noutros módulos, por isso é a rota
+        // que junta as respostas todas.
         const user = res.locals.currentUser
         return res.render("anuncio.html", Object.assign(view, {
             canRate: ratings.canRate(db, view.listing.id, user.id).ok,
-            myRating: ratings.myRating(db, view.listing.id, user.id)
+            myRating: ratings.myRating(db, view.listing.id, user.id),
+            isAdmin: user.role === "admin"
         }))
     } catch (err) {
         return serverError(res, err)
@@ -489,6 +490,28 @@ server.post("/anuncios/:id/avaliar", requireAuth, verifyCsrf, (req, res) => {
     }
 })
 
+// Moderação: a equipa remove um anúncio impróprio, ou restaura um removido
+// por engano. Reutiliza a máquina de estados de listings.js.
+server.post("/anuncios/:id/moderar", requireRole("admin"), verifyCsrf, (req, res) => {
+    try {
+        const result = listings.moderate(db, req.params.id, req.body.reason)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
+server.post("/anuncios/:id/restaurar", requireRole("admin"), verifyCsrf, (req, res) => {
+    try {
+        const result = listings.restore(db, req.params.id)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
 // =====================================================================
 // Admin — verificação de recicladores
 // =====================================================================
@@ -500,7 +523,8 @@ server.get("/admin", requireRole("admin"), (req, res) => {
             staleAfterDays: dashboard.STALE_AFTER_DAYS,
             pending: admin.pendingRecyclers(db),
             verified: admin.verifiedRecyclers(db),
-            workshops: admin.workshopsWithSignups(db)
+            workshops: admin.workshopsWithSignups(db),
+            moderated: admin.moderatedListings(db)
         })
     } catch (err) {
         return serverError(res, err)

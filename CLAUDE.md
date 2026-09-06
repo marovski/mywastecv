@@ -76,6 +76,10 @@ locals. Multipart routes run `listingPhoto` **before** `verifyCsrf` (so
 - `users` (id, role `cidadao|reciclador|admin`, name, email UNIQUE, phone, zone, password_hash)
 - `recycler_profiles` (user_id PK, org_name, description, accepted_items csv, service_zones csv, does_pickup, does_dropoff, hours, image, address, verified_at)
 - `listings` (id, citizen_id, items csv, quantity_kg_est, zone, **address** (private), photo_path, note, status `aberta|reservada|recolhida|expirada`, available_until)
+- `listings.status` now includes `removida` (admin-removed); `listings.moderation_reason`
+  holds why. **Requires a fresh database** — the `CHECK` constraint only
+  widens on `CREATE TABLE`, and there is no migration framework (DB is
+  disposable, per the run/dev section).
 - `claims` (id, listing_id, recycler_id, message, status `pendente|aceite|recusada|retirada`, UNIQUE(listing_id,recycler_id))
 - `collection_records` (id, listing_id, recycler_id, citizen_id, weights_json, collected_at)
 - `ratings` (id, listing_id, rater_id, rated_id, stars 1-5, comment, UNIQUE(listing_id,rater_id))
@@ -94,6 +98,9 @@ Recycler (`requireRole('reciclador')`): `/painel`, `/perfil` (+POST),
 Shared: `/anuncios/:id` (detail; privacy-gated contact),
 `/anuncios/:id/concluir` (+POST → collection_records),
 `POST /anuncios/:id/avaliar` (mutual rating, only after a confirmed recolha).
+Admin-only, but routed under `/anuncios` since they act on one:
+`POST /anuncios/:id/moderar` (aberta → removida, with a required reason),
+`POST /anuncios/:id/restaurar` (removida → aberta).
 Admin (`requireRole('admin')`): `/admin` (overview + pending/verified recyclers
 + workshop signups — the only place signups are visible),
 `POST /admin/recicladores/:userId/verificar|recusar` (both reachable from the UI),
@@ -142,6 +149,11 @@ must never re-derive it — ask the module.
   do not bypass that or the public listing mis-sorts.
 - Deleting a workshop cascades to its `workshop_signups`; `remove()` returns
   `deletedSignups` so the confirmation can say how many are lost.
+- Moderation only applies to an **aberta** anúncio — a `reservada` one has a
+  claim already in play and is out of scope for this action. The form lives
+  on `/anuncios/:id` itself (admins can already view any anúncio there), not
+  a separate admin page; `admin.moderatedListings(db)` is the read side, for
+  the "Anúncios removidos" table on `/admin`.
 - Destructive admin forms carry `data-confirm="…"`; `public/scripts/confirm.js`
   turns that into a confirmation prompt (no inline handlers).
 - `impacto.citizens` needs `CAST(citizen_id AS TEXT)`: in a SQLite `UNION` the

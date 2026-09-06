@@ -99,6 +99,8 @@ a.card:hover { border-color: var(--primary-color); }
     margin: 24px 0;
 }
 .notice.success { background: #e1faec; color: #1b7a45; }
+.notice.warning { background: #fdf0ee; color: #8a2a1c; }
+.notice.warning form { margin-top: 12px; }
 
 /* Filtro de zona na listagem de recicladores */
 .zone-filter {

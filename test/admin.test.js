@@ -1,6 +1,6 @@
 const test = require("node:test")
 const assert = require("node:assert")
-const { freshDb, addUser, addProfile } = require("./helpers")
+const { freshDb, addUser, addProfile, addListing } = require("./helpers")
 const admin = require("../src/domain/admin")
 
 function addWorkshop(db, title, date, capacity = 30) {
@@ -101,4 +101,19 @@ test("workshopsWithSignups: distingue inscrição de conta e inscrição anónim
     const [row] = admin.workshopsWithSignups(db)
     assert.strictEqual(row.signups[0].user_id, user)
     assert.strictEqual(row.signups[1].user_id, null)
+})
+
+test("moderatedListings: só os removidos, com o motivo e mais recente primeiro", () => {
+    const db = freshDb()
+    const c = addUser(db, "cidadao", "Ana")
+    const listings = require("../src/domain/listings")
+    const l1 = addListing(db, c, { items: "Vidro" })
+    const l2 = addListing(db, c, { items: "Metal / Latas" })
+    listings.moderate(db, l1, "Motivo A")
+    db.prepare(`UPDATE listings SET created_at = datetime('now', '-1 day') WHERE id = ?`).run(l1)
+    listings.moderate(db, l2, "Motivo B")
+    const rows = admin.moderatedListings(db)
+    assert.deepStrictEqual(rows.map(r => r.id), [l2, l1])
+    assert.strictEqual(rows[1].moderation_reason, "Motivo A")
+    assert.strictEqual(rows[1].citizen_name, "Ana")
 })

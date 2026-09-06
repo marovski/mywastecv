@@ -72,4 +72,15 @@ function workshopsWithSignups(db) {
     })
 }
 
-module.exports = { pendingRecyclers, verifiedRecyclers, verify, revoke, workshopsWithSignups }
+// Anúncios removidos pela equipa, mais recentes primeiro — para se poder
+// restaurar um removido por engano.
+function moderatedListings(db) {
+    return db.prepare(`
+        SELECT l.id, l.items, l.zone, l.moderation_reason, l.created_at, u.name AS citizen_name
+        FROM listings l JOIN users u ON u.id = l.citizen_id
+        WHERE l.status = 'removida'
+        ORDER BY l.created_at DESC
+    `).all()
+}
+
+module.exports = { pendingRecyclers, verifiedRecyclers, verify, revoke, workshopsWithSignups, moderatedListings }
