@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% set pageId = "page-painel" %}
+{% block title %}<title>{% if workshop %}Editar workshop{% else %}Novo workshop{% endif %} — Nôs Lixu</title>{% endblock title %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>{% if workshop %}Editar workshop{% else %}Novo workshop{% endif %}</h1>
+            <p><a href="/admin">← Voltar à administração</a></p>
+        </header>
+
+        {% if errors %}
+            <ul class="form-errors">
+                {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="POST" class="stacked-form"
+              action="{% if workshop %}/admin/workshops/{{ workshop.id }}{% else %}/admin/workshops{% endif %}">
+            {% include "partials/csrf.html" %}
+
+            <label for="title">Título</label>
+            <input type="text" id="title" name="title" maxlength="120" required
+                   value="{{ values.title or '' }}">
+
+            <label for="description">Descrição</label>
+            <textarea id="description" name="description" rows="4">{{ values.description or '' }}</textarea>
+
+            <label for="date">Data e hora</label>
+            <input type="datetime-local" id="date" name="date" required
+                   value="{{ (values.date or '') | replace(' ', 'T') }}">
+
+            <label for="zone">Zona (opcional)</label>
+            <select id="zone" name="zone">
+                <option value="">Sem local definido</option>
+                {% for z in zones %}
+                    <option value="{{ z }}" {% if values.zone == z %}selected{% endif %}>{{ z }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="capacity">Lugares</label>
+            <input type="number" id="capacity" name="capacity" min="1" step="1" required
+                   value="{{ values.capacity or 30 }}">
+
+            <button class="btn" type="submit">{% if workshop %}Guardar alterações{% else %}Criar workshop{% endif %}</button>
+        </form>
+    </main>
+{% endblock content %}

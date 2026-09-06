@@ -36,6 +36,7 @@ const match = require("./domain/match")
 const impacto = require("./domain/impacto")
 const ratings = require("./domain/ratings")
 const admin = require("./domain/admin")
+const adminWorkshops = require("./domain/workshops")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -515,6 +516,61 @@ server.post("/admin/recicladores/:userId/verificar", requireRole("admin"), verif
 server.post("/admin/recicladores/:userId/recusar", requireRole("admin"), verifyCsrf, (req, res) => {
     try {
         const result = admin.revoke(db, req.params.userId)
+        if (!result.ok) return renderFail(res, result)
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
+// --- Gestão de workshops (admin) -------------------------------------
+function renderWorkshopForm(res, status, { workshop, values, errors }) {
+    return res.status(status).render("admin-workshop.html", { workshop, values, errors })
+}
+
+server.get("/admin/workshops/novo", requireRole("admin"), (req, res) => {
+    renderWorkshopForm(res, 200, { workshop: null, values: { capacity: 30 } })
+})
+
+server.post("/admin/workshops", requireRole("admin"), verifyCsrf, (req, res) => {
+    try {
+        const result = adminWorkshops.create(db, req.body)
+        if (!result.ok) {
+            return renderWorkshopForm(res, result.status, { workshop: null, values: req.body, errors: result.errors })
+        }
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
+server.get("/admin/workshops/:id/editar", requireRole("admin"), (req, res) => {
+    try {
+        const workshop = adminWorkshops.get(db, req.params.id)
+        if (!workshop) return res.status(404).render("error.html", { message: "Workshop não encontrado." })
+        return renderWorkshopForm(res, 200, { workshop, values: workshop })
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
+server.post("/admin/workshops/:id", requireRole("admin"), verifyCsrf, (req, res) => {
+    try {
+        const result = adminWorkshops.update(db, req.params.id, req.body)
+        if (!result.ok) {
+            const workshop = adminWorkshops.get(db, req.params.id)
+            if (!workshop) return res.status(404).render("error.html", { message: "Workshop não encontrado." })
+            return renderWorkshopForm(res, result.status, { workshop, values: req.body, errors: result.errors })
+        }
+        return res.redirect("/admin")
+    } catch (err) {
+        return serverError(res, err)
+    }
+})
+
+server.post("/admin/workshops/:id/eliminar", requireRole("admin"), verifyCsrf, (req, res) => {
+    try {
+        const result = adminWorkshops.remove(db, req.params.id)
         if (!result.ok) return renderFail(res, result)
         return res.redirect("/admin")
     } catch (err) {
