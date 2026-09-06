@@ -52,6 +52,7 @@ form.auth-form + p, .owner-actions form { display: inline-block; }
 .badge-reservada{ background: #fff3d6; color: #8a5a00; }
 .badge-recolhida{ background: #e6e6ff; color: #3b3b8f; }
 .badge-expirada { background: #eee; color: #777; }
+.badge-removida { background: #fdf0ee; color: #8a2a1c; }
 .badge-pendente { background: #fff3d6; color: #8a5a00; }
 .badge-aceite   { background: #e1faec; color: #1b7a45; }
 .badge-recusada, .badge-retirada { background: #ffe8e8; color: #a12a2a; }
@@ -213,4 +214,27 @@ form.auth-form + p, .owner-actions form { display: inline-block; }
 }
 .row-warn td {
     background: #fdf6e3;
+}
+
+/* --- Moderação (na página do anúncio) ------------------------------ */
+.admin-moderation {
+    border: 1px dashed #c0392b;
+    border-radius: 6px;
+    padding: .75rem 1rem;
+    margin: 1.5rem 0;
+}
+.admin-moderation summary {
+    cursor: pointer;
+    color: #8a2a1c;
+    font-weight: 600;
+}
+.admin-moderation form {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    margin-top: .75rem;
+    max-width: 28rem;
+}
+.admin-moderation textarea {
+    width: 100%;
 }

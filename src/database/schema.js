@@ -42,8 +42,9 @@ function createSchema(db) {
         photo_path      TEXT,
         note            TEXT,
         status          TEXT NOT NULL DEFAULT 'aberta'
-                        CHECK (status IN ('aberta', 'reservada', 'recolhida', 'expirada')),
-        available_until TEXT,
+                        CHECK (status IN ('aberta', 'reservada', 'recolhida', 'expirada', 'removida')),
+        available_until  TEXT,
+        moderation_reason TEXT,
         created_at      TEXT DEFAULT CURRENT_TIMESTAMP
     );
 

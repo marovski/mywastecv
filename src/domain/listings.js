@@ -139,4 +139,33 @@ function sweepExpired(db) {
     `).run()
 }
 
-module.exports = { claim, accept, withdraw, expire, conclude, sweepExpired }
+// A equipa remove um anúncio (conteúdo impróprio, denúncia, etc). Só a partir
+// de "aberta": um anúncio reservado ou concluído já tem outra parte envolvida
+// e sai do âmbito desta ação.
+function moderate(db, listingId, reason) {
+    const listing = getListing(db, listingId)
+    if (!listing) return fail(404, "Anúncio não encontrado.")
+    if (listing.status !== "aberta") {
+        return fail(400, "Só é possível remover um anúncio aberto.")
+    }
+    const text = (reason || "").trim()
+    if (!text) return fail(400, "Indique o motivo da remoção.")
+
+    db.prepare(`UPDATE listings SET status = 'removida', moderation_reason = ? WHERE id = ?`)
+      .run(text, listing.id)
+    return { ok: true }
+}
+
+// Devolve um anúncio removido ao board — engano da equipa, denúncia infundada.
+function restore(db, listingId) {
+    const listing = getListing(db, listingId)
+    if (!listing) return fail(404, "Anúncio não encontrado.")
+    if (listing.status !== "removida") {
+        return fail(400, "Este anúncio não está removido.")
+    }
+    db.prepare(`UPDATE listings SET status = 'aberta', moderation_reason = NULL WHERE id = ?`)
+      .run(listing.id)
+    return { ok: true }
+}
+
+module.exports = { claim, accept, withdraw, expire, conclude, sweepExpired, moderate, restore }
