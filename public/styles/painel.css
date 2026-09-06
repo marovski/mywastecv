@@ -189,3 +189,28 @@ form.auth-form + p, .owner-actions form { display: inline-block; }
     padding: .75rem 1rem .75rem 1.5rem;
     margin-bottom: 1.5rem;
 }
+
+/* --- Admin: visão geral -------------------------------------------- */
+.dash-cards {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: .75rem;
+}
+.dash-cards li {
+    border: 1px solid #e6e6e6;
+    border-radius: 6px;
+    padding: .75rem 1rem;
+    background: #fff;
+}
+.dash-n {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+.row-warn td {
+    background: #fdf6e3;
+}

@@ -37,6 +37,7 @@ const impacto = require("./domain/impacto")
 const ratings = require("./domain/ratings")
 const admin = require("./domain/admin")
 const adminWorkshops = require("./domain/workshops")
+const dashboard = require("./domain/dashboard")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -493,7 +494,10 @@ server.post("/anuncios/:id/avaliar", requireAuth, verifyCsrf, (req, res) => {
 // =====================================================================
 server.get("/admin", requireRole("admin"), (req, res) => {
     try {
+        sweepExpired()
         return res.render("admin.html", {
+            overview: dashboard.overview(db),
+            staleAfterDays: dashboard.STALE_AFTER_DAYS,
             pending: admin.pendingRecyclers(db),
             verified: admin.verifiedRecyclers(db),
             workshops: admin.workshopsWithSignups(db)

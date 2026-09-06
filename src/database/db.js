@@ -84,6 +84,23 @@ function seedIfEmpty() {
                     "Rua Cabo Verde Telecom, casa 14",
                     "Garrafão de óleo usado e um saco de pilhas.")
 
+        // Um pedido por responder e um anúncio parado, para a visão geral do
+        // /admin mostrar as duas situações que ela existe para apanhar.
+        const platoListing = db.prepare(
+            `SELECT id FROM listings WHERE citizen_id = ? AND zone = 'Platô'`
+        ).get(joaoOpen)
+        const reciclagemPlato = db.prepare(
+            `SELECT id FROM users WHERE email = 'reciclador1@noslixu.cv'`
+        ).get()
+        if (platoListing && reciclagemPlato) {
+            db.prepare(`
+                INSERT INTO claims (listing_id, recycler_id, message, status, created_at)
+                VALUES (?, ?, ?, 'pendente', datetime('now', '-9 days'));
+            `).run(platoListing.id, reciclagemPlato.id, "Podemos passar na quinta de manhã.")
+        }
+        // O anúncio da Ana não corresponde a nenhum reciclador: fica parado.
+        db.prepare(`UPDATE listings SET created_at = datetime('now', '-21 days') WHERE id = 1`).run()
+
         // Recolhas já concluídas, para o /impacto não abrir a zeros.
         // Cada uma é um anúncio fechado + o claim aceite + o registo de pesos.
         const joaoId = db.prepare(`SELECT id FROM users WHERE email = 'joao@exemplo.cv'`).get().id

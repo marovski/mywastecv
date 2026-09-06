@@ -12,6 +12,79 @@
             <p>Verificar recicladores e acompanhar as inscrições nos workshops.</p>
         </header>
 
+        <section class="dash">
+            <h2>Visão geral</h2>
+            <ul class="dash-cards">
+                <li><span class="dash-n">{{ overview.byStatus.aberta }}</span> anúncios abertos</li>
+                <li><span class="dash-n">{{ overview.byStatus.reservada }}</span> reservados</li>
+                <li><span class="dash-n">{{ overview.byStatus.recolhida }}</span> recolhidos</li>
+                <li><span class="dash-n">{{ overview.byStatus.expirada }}</span> expirados</li>
+                <li><span class="dash-n">{{ overview.counts.cidadaos }}</span> cidadãos</li>
+                <li><span class="dash-n">{{ overview.counts.recicladores }}</span> recicladores{% if overview.counts.recicladoresPorVerificar %}<br><span class="muted">{{ overview.counts.recicladoresPorVerificar }} por verificar</span>{% endif %}</li>
+            </ul>
+        </section>
+
+        <h2>À espera de resposta do cidadão ({{ overview.awaiting.length }})</h2>
+        {% if overview.awaiting.length == 0 %}
+            <p class="muted">Nenhum pedido pendente.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Zona</th><th>Pedidos</th><th>À espera</th></tr></thead>
+                <tbody>
+                {% for a in overview.awaiting %}
+                    <tr{% if a.days_waiting >= 7 %} class="row-warn"{% endif %}>
+                        <td><a href="/anuncios/{{ a.listing_id }}">#{{ a.listing_id }}</a> {{ a.items }}</td>
+                        <td>{{ a.citizen_name }}</td>
+                        <td>{{ a.zone }}</td>
+                        <td>{{ a.pending }}</td>
+                        <td>{% if a.days_waiting == 0 %}hoje{% elif a.days_waiting == 1 %}1 dia{% else %}{{ a.days_waiting }} dias{% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <h2>Abertos sem interesse ({{ overview.stale.length }})</h2>
+        <p class="muted">Abertos há {{ staleAfterDays }} dias ou mais e ainda sem um único pedido.</p>
+        {% if overview.stale.length == 0 %}
+            <p>Nenhum.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Zona</th><th>Materiais</th><th>Aberto há</th></tr></thead>
+                <tbody>
+                {% for l in overview.stale %}
+                    <tr>
+                        <td><a href="/anuncios/{{ l.id }}">#{{ l.id }}</a></td>
+                        <td>{{ l.citizen_name }}</td>
+                        <td>{{ l.zone }}</td>
+                        <td>{{ l.items }}</td>
+                        <td>{{ l.days_open }} dias</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <h2>Últimas recolhas</h2>
+        {% if overview.collections.length == 0 %}
+            <p class="muted">Ainda não há recolhas confirmadas.</p>
+        {% else %}
+            <table class="data-table">
+                <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Reciclador</th><th>Peso</th><th>Quando</th></tr></thead>
+                <tbody>
+                {% for r in overview.collections %}
+                    <tr>
+                        <td><a href="/anuncios/{{ r.listing_id }}">#{{ r.listing_id }}</a></td>
+                        <td>{{ r.citizen_name }}</td>
+                        <td>{{ r.recycler_name }}</td>
+                        <td>{{ r.kg }} kg</td>
+                        <td>{{ r.collected_at or r.created_at }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
         <h2>Recicladores por verificar ({{ pending.length }})</h2>
         <p class="muted">Só recicladores verificados podem reivindicar anúncios e aparecer no diretório público.</p>
         {% if pending.length == 0 %}
