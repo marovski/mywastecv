@@ -55,6 +55,7 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 | `domain/ratings.js` | mutual avaliações after a recolha — who may rate whom, and the averages |
 | `domain/admin.js` | recycler verification + workshop signups for the team |
 | `domain/workshops.js` | admin CRUD for workshops, with validation |
+| `domain/dashboard.js` | operational overview for `/admin` (no kg/CO₂e — that is `impacto`) |
 | `config.js` | resolves `DATA_DIR` → `DB_PATH`, `UPLOADS_DIR`, `LISTINGS_UPLOAD_DIR` |
 | `database/db.js` | opens SQLite at `DB_PATH`, applies the schema, seeds when empty |
 | `database/schema.js` | `createSchema(db)` — the CREATE TABLEs, apart from opening the file |
@@ -93,8 +94,8 @@ Recycler (`requireRole('reciclador')`): `/painel`, `/perfil` (+POST),
 Shared: `/anuncios/:id` (detail; privacy-gated contact),
 `/anuncios/:id/concluir` (+POST → collection_records),
 `POST /anuncios/:id/avaliar` (mutual rating, only after a confirmed recolha).
-Admin (`requireRole('admin')`): `/admin` (pending + verified recyclers, and
-workshop signups — the only place they are visible),
+Admin (`requireRole('admin')`): `/admin` (overview + pending/verified recyclers
++ workshop signups — the only place signups are visible),
 `POST /admin/recicladores/:userId/verificar|recusar` (both reachable from the UI),
 `/admin/workshops/novo` (+`POST /admin/workshops`),
 `/admin/workshops/:id/editar` (+`POST /admin/workshops/:id`),
@@ -131,6 +132,10 @@ must never re-derive it — ask the module.
 - Login throttle is in-memory (per process). CO₂e factors in `materials.js` are
   placeholders. No email/SMS — WhatsApp links and avaliações are done; what is
   left of **Phase B** is automatic notification.
+- `domain/dashboard.js` answers "what needs attention": claims a citizen has not
+  answered (waiting measured from the **claim**, not the anúncio), open listings
+  with no claims after `STALE_AFTER_DAYS`, and recent collections. It
+  deliberately carries no kg/CO₂e so it does not drift from `/impacto`.
 - Workshop dates are stored as `"YYYY-MM-DD HH:MM"` because `/workshops`
   string-compares them against `now()` to split upcoming from past. A
   `datetime-local` input sends `"…T…"`, so `domain/workshops.js` normalises it —
