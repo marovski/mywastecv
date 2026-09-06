@@ -50,7 +50,8 @@ function forListing(db, listingId, viewer) {
     const claims = isOwner
         ? db.prepare(`
             SELECT c.*, u.name AS recycler_name, u.phone AS recycler_phone,
-                   p.address AS recycler_address, p.verified_at
+                   p.address AS recycler_address, p.contact_name AS recycler_contact_name,
+                   p.latitude AS recycler_lat, p.longitude AS recycler_lng, p.verified_at
             FROM claims c
             JOIN users u ON u.id = c.recycler_id
             LEFT JOIN recycler_profiles p ON p.user_id = c.recycler_id

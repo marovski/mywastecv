@@ -238,3 +238,21 @@ form.auth-form + p, .owner-actions form { display: inline-block; }
 .admin-moderation textarea {
     width: 100%;
 }
+
+/* --- Perfil do reciclador: localização ------------------------------ */
+.location-fields {
+    border: 1px solid #e6e6e6;
+    border-radius: 6px;
+    padding: .75rem 1rem;
+    margin: .5rem 0 1rem;
+}
+.location-fields legend {
+    font-weight: 600;
+    padding: 0 .35rem;
+}
+#location-status:empty {
+    display: none;
+}
+.map-link {
+    font-size: .85rem;
+}

@@ -12,11 +12,21 @@
             <p>Estes dados definem que anúncios lhe são mostrados e o que os cidadãos veem sobre si.</p>
         </header>
 
+        {% if errors %}
+            <ul class="form-errors">
+                {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+
         <form action="/perfil" method="POST" class="auth-form">
             {% include "partials/csrf.html" %}
 
             <label for="org_name">Nome / organização</label>
             <input type="text" name="org_name" id="org_name" value="{{ profile.org_name }}">
+
+            <label for="contact_name">Pessoa responsável</label>
+            <input type="text" name="contact_name" id="contact_name" value="{{ profile.contact_name }}"
+                   placeholder="Quem os cidadãos podem procurar no local">
 
             <label for="description">Descrição</label>
             <textarea name="description" id="description" rows="3">{{ profile.description }}</textarea>
@@ -46,10 +56,32 @@
             <label for="address">Morada do ponto</label>
             <input type="text" name="address" id="address" value="{{ profile.address }}">
 
+            <fieldset class="location-fields">
+                <legend>Localização da sede (opcional)</legend>
+                <p class="muted">
+                    Aparece como um link para o mapa no diretório público.
+                    Deixe os dois campos em branco se não quiser indicar.
+                </p>
+                <button type="button" id="use-my-location" class="btn-ghost">
+                    Usar a minha localização atual
+                </button>
+                <p id="location-status" class="muted" aria-live="polite"></p>
+
+                <label for="latitude">Latitude</label>
+                <input type="number" name="latitude" id="latitude" step="any" min="-90" max="90"
+                       value="{{ profile.latitude }}" placeholder="14.9177">
+
+                <label for="longitude">Longitude</label>
+                <input type="number" name="longitude" id="longitude" step="any" min="-180" max="180"
+                       value="{{ profile.longitude }}" placeholder="-23.5092">
+            </fieldset>
+
             <label for="image">Imagem (URL)</label>
             <input type="url" name="image" id="image" value="{{ profile.image }}" placeholder="https://">
 
             <button type="submit">Guardar perfil</button>
         </form>
     </main>
+
+    <script src="/scripts/geolocate.js" defer></script>
 {% endblock content %}

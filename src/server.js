@@ -38,6 +38,7 @@ const ratings = require("./domain/ratings")
 const admin = require("./domain/admin")
 const adminWorkshops = require("./domain/workshops")
 const dashboard = require("./domain/dashboard")
+const recyclerProfile = require("./domain/profile")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -271,23 +272,39 @@ server.get("/perfil", requireRole("reciclador"), (req, res) => {
 
 server.post("/perfil", requireRole("reciclador"), verifyCsrf, (req, res) => {
     const user = res.locals.currentUser
-    const { accepted_items, service_zones } = match.serialise(req.body.accepted_items, req.body.service_zones)
+    const parsed = recyclerProfile.parseFields(req.body)
+    if (parsed.errors) {
+        // Reconstitui um "profile" a partir do que a pessoa escreveu, para o
+        // formulário não perder tudo por causa de um único campo inválido. O
+        // template espera accepted_items/service_zones como CSV, tal como
+        // vêm da BD — não como o array que os checkboxes enviam.
+        const { accepted_items, service_zones } = match.serialise(req.body.accepted_items, req.body.service_zones)
+        return res.status(400).render("perfil-reciclador.html", {
+            profile: Object.assign({}, req.body, { accepted_items, service_zones }),
+            errors: parsed.errors
+        })
+    }
+    const values = parsed.values
     try {
         db.prepare(`
             UPDATE recycler_profiles SET
-                org_name = ?, description = ?, accepted_items = ?, service_zones = ?,
-                does_pickup = ?, does_dropoff = ?, hours = ?, image = ?, address = ?
+                org_name = ?, contact_name = ?, description = ?, accepted_items = ?, service_zones = ?,
+                does_pickup = ?, does_dropoff = ?, hours = ?, image = ?, address = ?,
+                latitude = ?, longitude = ?
             WHERE user_id = ?
         `).run(
-            (req.body.org_name || user.name).trim(),
-            req.body.description || null,
-            accepted_items,
-            service_zones,
-            req.body.does_pickup ? 1 : 0,
-            req.body.does_dropoff ? 1 : 0,
-            req.body.hours || null,
-            req.body.image || null,
-            req.body.address || null,
+            values.org_name || user.name,
+            values.contact_name,
+            values.description,
+            values.accepted_items,
+            values.service_zones,
+            values.does_pickup,
+            values.does_dropoff,
+            values.hours,
+            values.image,
+            values.address,
+            values.latitude,
+            values.longitude,
             user.id
         )
         return res.redirect("/painel")

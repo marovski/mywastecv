@@ -116,8 +116,11 @@
                         {% if c.message %}<p>“{{ c.message }}”</p>{% endif %}
                         {% if c.status == 'aceite' %}
                             <p>
-                                {{ c.recycler_phone }}
+                                {% if c.recycler_contact_name %}{{ c.recycler_contact_name }} · {% endif %}{{ c.recycler_phone }}
                                 {% if c.recycler_address %}· {{ c.recycler_address }}{% endif %}
+                                {% if c.recycler_lat != null and c.recycler_lng != null %}
+                                    · <a class="map-link" href="https://www.google.com/maps?q={{ c.recycler_lat }},{{ c.recycler_lng }}" target="_blank" rel="noopener">Ver no mapa</a>
+                                {% endif %}
                             </p>
                             {% if waToRecycler %}
                                 <a class="btn btn-wa" href="{{ waToRecycler }}" target="_blank" rel="noopener">

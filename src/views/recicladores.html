@@ -46,9 +46,13 @@
                         <h3>{{ place.accepted_items }}</h3>
                         <p>
                             {% if place.description %}{{ place.description }}<br>{% endif %}
+                            {% if place.contact_name %}<strong>Responsável:</strong> {{ place.contact_name }}<br>{% endif %}
                             <strong>Zonas:</strong> {{ place.service_zones }}<br>
                             {% if place.hours %}<strong>Horário:</strong> {{ place.hours }}<br>{% endif %}
                             {% if place.does_pickup %}Faz recolha{% endif %}{% if place.does_pickup and place.does_dropoff %} · {% endif %}{% if place.does_dropoff %}Aceita entregas{% endif %}
+                            {% if place.latitude != null and place.longitude != null %}
+                                <br><a class="map-link" href="https://www.google.com/maps?q={{ place.latitude }},{{ place.longitude }}" target="_blank" rel="noopener">Ver a sede no mapa</a>
+                            {% endif %}
                         </p>
                         {% if place.phone %}
                             <a class="contact" href="https://wa.me/{{ place.phone | replace(' ', '') }}" target="_blank" rel="noopener">Contactar</a>

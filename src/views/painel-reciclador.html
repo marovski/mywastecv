@@ -19,9 +19,13 @@
         <h2>Perfil</h2>
         <p>
             <strong>{{ profile.org_name }}</strong><br>
+            {% if profile.contact_name %}Responsável: {{ profile.contact_name }}<br>{% endif %}
             Materiais: {{ profile.accepted_items or "—" }}<br>
             Zonas: {{ profile.service_zones or "—" }}<br>
             {% if profile.does_pickup %}Faz recolha{% endif %}{% if profile.does_dropoff %} · Aceita entregas{% endif %}
+            {% if profile.latitude != null and profile.longitude != null %}
+                <br><a class="map-link" href="https://www.google.com/maps?q={{ profile.latitude }},{{ profile.longitude }}" target="_blank" rel="noopener">Ver a sede no mapa</a>
+            {% endif %}
         </p>
 
         <h2>Avaliações</h2>
