@@ -227,8 +227,11 @@ server.post("/sair", verifyCsrf, (req, res) => {
 // Painel (encaminha por papel)
 // =====================================================================
 server.get("/painel", requireAuth, (req, res) => {
-    sweepExpired()
     const user = res.locals.currentUser
+    // Admin não tem painel próprio: usa a área de administração.
+    if (user.role === "admin") return res.redirect("/admin")
+
+    sweepExpired()
     try {
         if (user.role === "reciclador") {
             const profile = db.prepare(`SELECT * FROM recycler_profiles WHERE user_id = ?`).get(user.id)
