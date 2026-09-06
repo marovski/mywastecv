@@ -158,5 +158,18 @@ function seedIfEmpty() {
             ["Reciclagem de óleo de cozinha", "Como recolher e encaminhar óleo alimentar usado sem contaminar a água.", "2026-10-05 17:30", "Achada Santo António", 30]
         ]
         for (const w of workshops) insert.run(...w)
+
+        // Inscrições de exemplo, para o painel de admin não abrir vazio.
+        const signUp = db.prepare(`
+            INSERT INTO workshop_signups (workshop_id, user_id, name, email, phone)
+            VALUES (?, ?, ?, ?, ?);
+        `)
+        const ana = db.prepare(`SELECT id FROM users WHERE email = 'ana@exemplo.cv'`).get()
+        const compostagem = db.prepare(`SELECT id FROM workshops WHERE title LIKE 'Compostagem%'`).get()
+        if (ana && compostagem) {
+            signUp.run(compostagem.id, ana.id, "Ana Tavares", "ana@exemplo.cv", "2389111111")
+            signUp.run(compostagem.id, null, "Nádia Semedo", "nadia@exemplo.cv", "2389333333")
+            signUp.run(compostagem.id, null, "Elton Barros", "elton@exemplo.cv", null)
+        }
     }
 }

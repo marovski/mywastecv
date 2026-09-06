@@ -84,3 +84,16 @@ test("weights_json corrompido é ignorado, o resto continua a contar", () => {
     addCollection(db, addListing(db, c), r, c, { "Vidro": 5 })
     assert.strictEqual(impacto.metrics(db).kg, 5)
 })
+
+test("citizens: quem doou E se inscreveu num workshop conta uma só vez", () => {
+    const db = freshDb()
+    const ana = addUser(db, "cidadao", "Ana")
+    const r = addProfile(db, addUser(db, "reciclador", "Eco"))
+    addCollection(db, addListing(db, ana), r, ana, { "Vidro": 1 })
+    db.prepare(`INSERT INTO workshops (title, date, capacity) VALUES ('W', '2026-01-01 10:00', 10)`).run()
+    // A mesma pessoa, agora inscrita com a sua conta: o UNION compara
+    // citizen_id (inteiro) com user_id convertido para texto.
+    db.prepare(`INSERT INTO workshop_signups (workshop_id, user_id, name, email) VALUES (1, ?, 'Ana', 'ana@t.cv')`).run(ana)
+    db.prepare(`INSERT INTO workshop_signups (workshop_id, name, email) VALUES (1, 'Zé', 'ze@t.cv')`).run()
+    assert.strictEqual(impacto.metrics(db).citizens, 2)
+})

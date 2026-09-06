@@ -53,6 +53,7 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 | `domain/match.js` | recycler profile ↔ anúncio matching; owns the CSV storage format |
 | `domain/impacto.js` | the public impact metrics — `metrics(db)` |
 | `domain/ratings.js` | mutual avaliações after a recolha — who may rate whom, and the averages |
+| `domain/admin.js` | recycler verification + workshop signups for the team |
 | `config.js` | resolves `DATA_DIR` → `DB_PATH`, `UPLOADS_DIR`, `LISTINGS_UPLOAD_DIR` |
 | `database/db.js` | opens SQLite at `DB_PATH`, applies the schema, seeds when empty |
 | `database/schema.js` | `createSchema(db)` — the CREATE TABLEs, apart from opening the file |
@@ -91,7 +92,9 @@ Recycler (`requireRole('reciclador')`): `/painel`, `/perfil` (+POST),
 Shared: `/anuncios/:id` (detail; privacy-gated contact),
 `/anuncios/:id/concluir` (+POST → collection_records),
 `POST /anuncios/:id/avaliar` (mutual rating, only after a confirmed recolha).
-Admin (`requireRole('admin')`): `/admin`, `POST /admin/recicladores/:userId/verificar|recusar`.
+Admin (`requireRole('admin')`): `/admin` (pending + verified recyclers, and
+workshop signups — the only place they are visible),
+`POST /admin/recicladores/:userId/verificar|recusar` (both reachable from the UI).
 
 **Rating rule**: only the two parties of a **concluded** recolha may rate, each
 rates the other, once per anúncio. `domain/ratings.js` derives rater and rated —
@@ -124,6 +127,11 @@ must never re-derive it — ask the module.
 - Login throttle is in-memory (per process). CO₂e factors in `materials.js` are
   placeholders. No email/SMS — WhatsApp links and avaliações are done; what is
   left of **Phase B** is automatic notification.
+- Destructive admin forms carry `data-confirm="…"`; `public/scripts/confirm.js`
+  turns that into a confirmation prompt (no inline handlers).
+- `impacto.citizens` needs `CAST(citizen_id AS TEXT)`: in a SQLite `UNION` the
+  integer `6` and the text `"6"` are different values, so anyone who both
+  donated and signed up for a workshop would be counted twice.
 - Nunjucks does **not** repeat strings (`"★" * n` is Jinja and yields `NaN`).
   Stars are drawn with the `estrelas` filter registered in `server.js`.
 - The seed creates 4 concluded collections (49 kg, 5 flows across 3 recyclers)

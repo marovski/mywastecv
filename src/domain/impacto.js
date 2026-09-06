@@ -26,9 +26,11 @@ function metrics(db) {
         )
     `).get().total
 
+    // O CAST é necessário: no UNION do SQLite o inteiro 6 e o texto "6" são
+    // valores distintos, e quem doou e se inscreveu contaria duas vezes.
     const citizens = db.prepare(`
         SELECT COUNT(*) AS total FROM (
-            SELECT citizen_id AS k FROM collection_records
+            SELECT CAST(citizen_id AS TEXT) AS k FROM collection_records
             UNION
             SELECT COALESCE(CAST(user_id AS TEXT), email) AS k FROM workshop_signups
         )
