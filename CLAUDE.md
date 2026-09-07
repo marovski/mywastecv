@@ -196,6 +196,21 @@ must never re-derive it — ask the module.
   every page), and auditing every `<form>` and `<button type="submit">` in the
   app. If a form ever looks unstyled again, check its `{% block styles %}`
   for `forms.css` before anything else.
+- **Mobile**: the homepage (`index.html`) has its own bespoke header/nav —
+  it does not use `partials/nav.html` — and `responsive.css`'s
+  `@media (max-width: 900px)` block used to absolutely-position every link
+  inside it to the same spot, so on any phone all five nav links stacked
+  invisibly on top of each other and only the last (the "Entrar"/"Painel"
+  pill) was clickable. Fixed by deleting that rule — `#page-home header`
+  already has `flex-wrap: wrap`, so it wraps correctly on its own. Don't
+  reintroduce `position: absolute` there; if the home header ever needs
+  different mobile behaviour, add it to `@media (max-width: 600px)` instead.
+- **Mobile**: any `<table class="data-table">` must be wrapped in
+  `<div class="table-wrap">` (defined in `painel.css`, next to `.data-table`)
+  — without it, a table wider than the viewport pushes the whole page wider
+  and the columns run off both silently and unrecoverably (no way to scroll
+  back and see them). `.table-wrap` gives the table its own horizontal
+  scrollbar and a `min-width` so columns don't get squeezed illegibly first.
 - The seed creates 4 concluded collections (49 kg, 5 flows across 3 recyclers)
   so `/impacto` is non-zero out of the box, plus 3 open listings chosen so that
   `reciclador1` and `reciclador2` each match one under the default board filter.

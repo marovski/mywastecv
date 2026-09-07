@@ -28,6 +28,7 @@
         {% if overview.awaiting.length == 0 %}
             <p class="muted">Nenhum pedido pendente.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Zona</th><th>Pedidos</th><th>À espera</th></tr></thead>
                 <tbody>
@@ -42,6 +43,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Abertos sem interesse ({{ overview.stale.length }})</h2>
@@ -49,6 +51,7 @@
         {% if overview.stale.length == 0 %}
             <p>Nenhum.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Zona</th><th>Materiais</th><th>Aberto há</th></tr></thead>
                 <tbody>
@@ -63,12 +66,14 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Últimas recolhas</h2>
         {% if overview.collections.length == 0 %}
             <p class="muted">Ainda não há recolhas confirmadas.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Reciclador</th><th>Peso</th><th>Quando</th></tr></thead>
                 <tbody>
@@ -83,12 +88,14 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Anúncios removidos ({{ moderated.length }})</h2>
         {% if moderated.length == 0 %}
             <p class="muted">Nenhum anúncio removido.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Anúncio</th><th>Cidadão</th><th>Motivo</th><th>Removido em</th><th></th></tr></thead>
                 <tbody>
@@ -109,6 +116,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Recicladores por verificar ({{ pending.length }})</h2>
@@ -116,6 +124,7 @@
         {% if pending.length == 0 %}
             <p>Nada pendente.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Nome</th><th>Contacto</th><th>Zonas</th><th>Materiais</th><th></th></tr></thead>
                 <tbody>
@@ -136,12 +145,14 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Recicladores verificados ({{ verified.length }})</h2>
         {% if verified.length == 0 %}
             <p>Ainda não há recicladores verificados.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Nome</th><th>Contacto</th><th>Zonas</th><th>Desde</th><th></th></tr></thead>
                 <tbody>
@@ -162,6 +173,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Workshops e inscrições</h2>
@@ -188,6 +200,7 @@
                     {% if w.total == 0 %}
                         <p>Sem inscrições.</p>
                     {% else %}
+                        <div class="table-wrap">
                         <table class="data-table">
                             <thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Inscrito em</th></tr></thead>
                             <tbody>
@@ -201,6 +214,7 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                        </div>
                     {% endif %}
                 </section>
             {% endfor %}
