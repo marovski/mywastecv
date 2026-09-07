@@ -1,0 +1,154 @@
+/* Formulário partilhado por toda a aplicação: autenticação, perfil do
+   reciclador, anúncios, confirmação de recolha, inscrições em workshops,
+   administração. Um único conjunto de regras — nada disto deve ser
+   reimplementado à parte numa página específica. */
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+}
+.auth-form label {
+    margin: 16px 0 6px;
+    font-weight: 700;
+    color: var(--title-color);
+}
+.auth-form label:first-child { margin-top: 0; }
+.auth-form .req {
+    color: #a12a2a;
+    margin-left: 2px;
+}
+.auth-form .hint {
+    margin: -2px 0 8px;
+    font-size: 13px;
+    color: var(--text-color);
+}
+.auth-form label.check {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: 400;
+    margin: 0;
+    padding: 8px 4px;
+    border-radius: 6px;
+    transition: background 150ms;
+}
+.auth-form label.check:hover { background: #f7f7fb; }
+.auth-form label.check input { margin-top: 3px; }
+
+.auth-form input[type="text"],
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="tel"],
+.auth-form input[type="url"],
+.auth-form input[type="number"],
+.auth-form input[type="date"],
+.auth-form input[type="datetime-local"],
+.auth-form input[type="file"],
+.auth-form select,
+.auth-form textarea {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    color: inherit;
+    transition: border-color 150ms, box-shadow 150ms;
+}
+.auth-form textarea { resize: vertical; }
+
+.auth-form input:focus,
+.auth-form select:focus,
+.auth-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 203, 89, 0.25);
+}
+.auth-form label.check:focus-within { background: #f7f7fb; }
+
+.auth-form input:disabled,
+.auth-form select:disabled,
+.auth-form textarea:disabled,
+.auth-form button:disabled {
+    background: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.auth-form fieldset {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 4px 16px 12px;
+    margin-top: 16px;
+}
+.auth-form legend {
+    font-weight: 700;
+    color: var(--title-color);
+    padding: 0 6px;
+}
+.auth-form .legend-hint {
+    margin: -6px 0 8px;
+    font-size: 13px;
+    color: var(--text-color);
+}
+
+/* Grelha de checkboxes (materiais, zonas) — evita a parede de texto que
+   dá quando uma dúzia de opções se empilha numa só coluna estreita. */
+.auth-form .checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0 8px;
+}
+
+.auth-form button[type="submit"] {
+    margin-top: 24px;
+    align-self: flex-start;
+}
+
+.role-picker { display: flex; flex-direction: column; gap: 8px; }
+.role-picker label {
+    border: 2px solid #eee;
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 0;
+    font-weight: 400;
+    transition: border-color 150ms, background 150ms;
+}
+.role-picker label:hover { border-color: #ccc; }
+.role-picker label.on { border-color: var(--primary-color); background: #e1faec; }
+.role-picker label:focus-within { border-color: var(--primary-color); }
+
+/* Materiais não anunciados, na confirmação de recolha — fechado por
+   omissão para não obrigar a passar por nove campos quando só 1 ou 2
+   interessam. */
+.auth-form .other-materials {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 4px 16px 12px;
+    margin-top: 16px;
+}
+.auth-form .other-materials summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--title-color);
+    padding: 12px 0;
+}
+.auth-form .other-materials label:first-of-type { margin-top: 0; }
+
+/* Lista de erros de validação, ao lado do formulário que os causou. */
+.form-errors {
+    background: #fdf0ee;
+    color: #8a2a1c;
+    border-left: 4px solid #a12a2a;
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 24px 0;
+    list-style: none;
+}
+.form-errors li { margin: 2px 0; }
+.form-errors li::before { content: "• "; }

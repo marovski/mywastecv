@@ -94,11 +94,51 @@ h1, h2, h3, h4, h5, h6 {
 .site-footer ul { list-style: none; }
 .site-footer li { color: #d9d5e6; line-height: 1.8; }
 
-/* --- Utilidades ------------------------------------------------------- */
-.form-errors {
-    background: #ffe8e8;
-    color: #a12a2a;
+/* --- Botões ------------------------------------------------------------
+   Um só sítio para os três estilos de botão da aplicação — usados dentro
+   e fora de formulários (links de ação no painel, submits, avisos de
+   WhatsApp), por isso vivem aqui e não em forms.css nem em painel.css. */
+.btn {
+    display: inline-block;
+    background: var(--primary-color);
+    color: #fff;
+    font-weight: 700;
+    padding: 12px 22px;
     border-radius: 8px;
-    padding: 16px 24px 16px 40px;
-    margin: 24px 0;
+    border: 0;
+    cursor: pointer;
+    font-size: 15px;
+    font-family: inherit;
+    margin-right: 8px;
+    margin-top: 8px;
+    transition: background 150ms;
+}
+.btn:hover { background: var(--primary-dark); }
+.btn-ghost {
+    background: #fff;
+    color: var(--title-color);
+    border: 1px solid #ccc;
+}
+.btn-ghost:hover { background: #f7f7fb; }
+
+/* Botão de aviso por WhatsApp (cor da marca, para ser reconhecível). */
+.btn-wa {
+    display: inline-block;
+    background: #25d366;
+    color: #fff;
+    margin-top: 8px;
+}
+.btn-wa:hover { background: #1da851; }
+
+.btn:focus-visible,
+.btn-ghost:focus-visible,
+.btn-wa:focus-visible {
+    outline: 3px solid rgba(52, 203, 89, 0.5);
+    outline-offset: 2px;
+}
+
+.field-hint {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--text-color);
 }

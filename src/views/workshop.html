@@ -6,6 +6,7 @@
 
 {% block styles %}
     <link rel="stylesheet" href="/styles/content-page.css">
+    <link rel="stylesheet" href="/styles/forms.css">
 {% endblock styles %}
 
 {% block content %}
@@ -26,7 +27,7 @@
         {% endif %}
 
         {% if errors %}
-            <ul class="form-errors">
+            <ul class="form-errors" role="alert">
                 {% for error in errors %}<li>{{ error }}</li>{% endfor %}
             </ul>
         {% endif %}
@@ -34,22 +35,22 @@
         {% if spotsLeft > 0 %}
             <h2>Inscrever-me</h2>
             <p>{{ spotsLeft }} vaga{{ 's' if spotsLeft != 1 }} disponíve{{ 'is' if spotsLeft != 1 else 'l' }}.</p>
-            <form action="/workshops/{{ workshop.id }}/inscrever" method="POST" class="signup-form">
+            <form action="/workshops/{{ workshop.id }}/inscrever" method="POST" class="auth-form">
                 {% include "partials/csrf.html" %}
                 {% if currentUser %}
                     <p>Inscrição como <strong>{{ currentUser.name }}</strong> ({{ currentUser.email }}).</p>
                 {% else %}
-                    <label for="name">Nome</label>
-                    <input type="text" name="name" id="name" value="{{ values.name }}" required>
+                    <label for="name">Nome <span class="req" aria-hidden="true">*</span></label>
+                    <input type="text" name="name" id="name" value="{{ values.name }}" required autocomplete="name">
 
-                    <label for="email">Email</label>
-                    <input type="email" name="email" id="email" value="{{ values.email }}" required>
+                    <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+                    <input type="email" name="email" id="email" value="{{ values.email }}" required autocomplete="email">
 
                     <label for="phone">Telefone (opcional)</label>
-                    <input type="text" name="phone" id="phone" value="{{ values.phone }}">
+                    <input type="text" name="phone" id="phone" value="{{ values.phone }}" inputmode="tel" autocomplete="tel">
                 {% endif %}
 
-                <button type="submit">Confirmar inscrição</button>
+                <button class="btn" type="submit">Confirmar inscrição</button>
             </form>
         {% else %}
             <div class="notice">Este workshop está lotado.</div>

@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% set pageId = "page-painel" %}
 {% block title %}<title>Perfil do reciclador — Nôs Lixu</title>{% endblock title %}
-{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
+{% block styles %}<link rel="stylesheet" href="/styles/content-page.css"><link rel="stylesheet" href="/styles/forms.css"><link rel="stylesheet" href="/styles/painel.css">{% endblock styles %}
 
 {% block content %}
     {% include "partials/nav.html" %}
@@ -13,7 +13,7 @@
         </header>
 
         {% if errors %}
-            <ul class="form-errors">
+            <ul class="form-errors" role="alert">
                 {% for e in errors %}<li>{{ e }}</li>{% endfor %}
             </ul>
         {% endif %}
@@ -22,39 +22,48 @@
             {% include "partials/csrf.html" %}
 
             <label for="org_name">Nome / organização</label>
-            <input type="text" name="org_name" id="org_name" value="{{ profile.org_name }}">
+            <input type="text" name="org_name" id="org_name" value="{{ profile.org_name }}" autocomplete="organization">
 
             <label for="contact_name">Pessoa responsável</label>
             <input type="text" name="contact_name" id="contact_name" value="{{ profile.contact_name }}"
-                   placeholder="Quem os cidadãos podem procurar no local">
+                   placeholder="Quem os cidadãos podem procurar no local" autocomplete="name">
 
             <label for="description">Descrição</label>
             <textarea name="description" id="description" rows="3">{{ profile.description }}</textarea>
 
             <fieldset>
                 <legend>Materiais que aceita</legend>
+                <p class="legend-hint">Uma seleção vazia aceita anúncios de qualquer material.</p>
                 {% set accepted = (profile.accepted_items or "").split(",") %}
-                {% for m in materials %}
-                    <label class="check"><input type="checkbox" name="accepted_items" value="{{ m.label }}" {{ 'checked' if m.label in accepted }}> {{ m.label }}</label>
-                {% endfor %}
+                <div class="checklist">
+                    {% for m in materials %}
+                        <label class="check"><input type="checkbox" name="accepted_items" value="{{ m.label }}" {{ 'checked' if m.label in accepted }}> {{ m.label }}</label>
+                    {% endfor %}
+                </div>
             </fieldset>
 
             <fieldset>
                 <legend>Zonas onde opera</legend>
+                <p class="legend-hint">Uma seleção vazia aceita anúncios de qualquer zona.</p>
                 {% set svc = (profile.service_zones or "").split(",") %}
-                {% for z in zones %}
-                    <label class="check"><input type="checkbox" name="service_zones" value="{{ z }}" {{ 'checked' if z in svc }}> {{ z }}</label>
-                {% endfor %}
+                <div class="checklist">
+                    {% for z in zones %}
+                        <label class="check"><input type="checkbox" name="service_zones" value="{{ z }}" {{ 'checked' if z in svc }}> {{ z }}</label>
+                    {% endfor %}
+                </div>
             </fieldset>
 
-            <label class="check"><input type="checkbox" name="does_pickup" value="1" {{ 'checked' if profile.does_pickup }}> Faz recolha ao domicílio</label>
-            <label class="check"><input type="checkbox" name="does_dropoff" value="1" {{ 'checked' if profile.does_dropoff }}> Aceita entregas no seu ponto</label>
+            <fieldset>
+                <legend>Modo de funcionamento</legend>
+                <label class="check"><input type="checkbox" name="does_pickup" value="1" {{ 'checked' if profile.does_pickup }}> Faz recolha ao domicílio</label>
+                <label class="check"><input type="checkbox" name="does_dropoff" value="1" {{ 'checked' if profile.does_dropoff }}> Aceita entregas no seu ponto</label>
+            </fieldset>
 
             <label for="hours">Horário</label>
             <input type="text" name="hours" id="hours" value="{{ profile.hours }}" placeholder="Seg-Sex 08:00-16:00">
 
             <label for="address">Morada do ponto</label>
-            <input type="text" name="address" id="address" value="{{ profile.address }}">
+            <input type="text" name="address" id="address" value="{{ profile.address }}" autocomplete="street-address">
 
             <fieldset class="location-fields">
                 <legend>Localização da sede (opcional)</legend>
@@ -68,18 +77,18 @@
                 <p id="location-status" class="muted" aria-live="polite"></p>
 
                 <label for="latitude">Latitude</label>
-                <input type="number" name="latitude" id="latitude" step="any" min="-90" max="90"
+                <input type="number" name="latitude" id="latitude" step="any" min="-90" max="90" inputmode="decimal"
                        value="{{ profile.latitude }}" placeholder="14.9177">
 
                 <label for="longitude">Longitude</label>
-                <input type="number" name="longitude" id="longitude" step="any" min="-180" max="180"
+                <input type="number" name="longitude" id="longitude" step="any" min="-180" max="180" inputmode="decimal"
                        value="{{ profile.longitude }}" placeholder="-23.5092">
             </fieldset>
 
             <label for="image">Imagem (URL)</label>
             <input type="url" name="image" id="image" value="{{ profile.image }}" placeholder="https://">
 
-            <button type="submit">Guardar perfil</button>
+            <button class="btn" type="submit">Guardar perfil</button>
         </form>
     </main>
 

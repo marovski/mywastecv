@@ -129,7 +129,7 @@
                             <form action="/admin/recicladores/{{ r.id }}/verificar" method="POST"
                                   data-confirm="Verificar {{ r.org_name or r.name }}? Passa a poder reivindicar anúncios.">
                                 {% include "partials/csrf.html" %}
-                                <button type="submit">Verificar</button>
+                                <button class="btn" type="submit">Verificar</button>
                             </form>
                         </td>
                     </tr>

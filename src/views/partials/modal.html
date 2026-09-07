@@ -5,10 +5,13 @@
             <a href="#" id="close-search">Fechar</a>
         </div>
         <form action="/recicladores" method="GET">
-            <label for="zone">Zona da Praia</label>
+            <label for="modal-zone">Zona da Praia</label>
             <div class="search field">
-                <input type="text" name="zone" id="zone" placeholder="Ex.: Palmarejo, Platô…">
-                <button>
+                <select name="zone" id="modal-zone">
+                    <option value="">Todas as zonas</option>
+                    {% for z in zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
+                </select>
+                <button type="submit">
                     <img src="/assets/icones/search.svg" alt="Pesquisar">
                 </button>
             </div>

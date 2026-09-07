@@ -61,7 +61,7 @@
 #modal form .field{
     display: flex;
 }
-#modal form input{
+#modal form select{
     flex: 1;
 
     background-color: #f0f0f5;
@@ -72,7 +72,12 @@
     padding: 16px 24px;
 
     font-size: 20px;
+    font-family: inherit;
     color: #6c6c80;
+}
+#modal form select:focus{
+    outline: 3px solid rgba(52, 203, 89, 0.5);
+    outline-offset: -3px;
 }
 #modal form button{
     width: 72px;
