@@ -51,6 +51,7 @@
         {% if claims.length == 0 %}
             <p>Ainda não reivindicou nenhum anúncio.</p>
         {% else %}
+            <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Materiais</th><th>Zona</th><th>Estado do pedido</th><th></th></tr></thead>
                 <tbody>
@@ -64,6 +65,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
         {% endif %}
 
         <h2>Recolhas concluídas</h2>

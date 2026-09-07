@@ -55,6 +55,20 @@ form.auth-form + p, .owner-actions form { display: inline-block; }
     cursor: pointer;
 }
 
+/* Um ecrã estreito não tem largura para as colunas todas: em vez de as
+   espremer até ficarem ilegíveis, a tabela ganha um scroll horizontal
+   próprio, sem arrastar o resto da página com ela. */
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 16px 0;
+}
+.table-wrap .data-table {
+    margin: 0;
+    min-width: 560px;
+}
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
