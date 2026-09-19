@@ -3,8 +3,12 @@ const express = require("express")
 const cookieSession = require("cookie-session")
 const server = express()
 
-const { UPLOADS_DIR } = require("./config")
-const db = require("./database/db")
+const { UPLOADS_DIR, DB_PATH } = require("./config")
+const { openDatabase } = require("./database/db")
+const { seedIfEmpty } = require("./database/seed")
+
+const db = openDatabase(DB_PATH)
+seedIfEmpty(db)
 
 const isProd = process.env.NODE_ENV === "production"
 
