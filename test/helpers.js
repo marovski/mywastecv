@@ -2,6 +2,7 @@
 // Segundo adaptador da mesma interface que os módulos de domínio usam em produção.
 const { DatabaseSync } = require("node:sqlite")
 const { createSchema } = require("../src/database/schema")
+const { hashPassword } = require("../src/password")
 
 function freshDb() {
     const db = new DatabaseSync(":memory:")
@@ -9,12 +10,16 @@ function freshDb() {
     return db
 }
 
+// `extra.password` dá ao utilizador uma password verdadeira, com que se pode
+// iniciar sessão (testes de HTTP). Sem ela fica um marcador: fazer o hash
+// scrypt custa uns milissegundos, e os testes de domínio não precisam dele.
 function addUser(db, role, name, extra = {}) {
     const info = db.prepare(`
         INSERT INTO users (role, name, email, phone, zone, password_hash)
-        VALUES (?, ?, ?, ?, ?, 'x')
+        VALUES (?, ?, ?, ?, ?, ?)
     `).run(role, name, extra.email || `${name.replace(/\W/g, "")}@t.cv`,
-           extra.phone || null, extra.zone || "Platô")
+           extra.phone || null, extra.zone || "Platô",
+           extra.password ? hashPassword(extra.password) : "x")
     return info.lastInsertRowid
 }
 

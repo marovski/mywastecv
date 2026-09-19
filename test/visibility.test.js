@@ -126,3 +126,16 @@ test("weights_json corrompido não rebenta", () => {
     const v = visibility.forListing(s.db, s.listing, asUser(s.citizen, "cidadao"))
     assert.deepStrictEqual(v.collection.weights, {})
 })
+
+test("links WhatsApp: um terceiro não recebe nenhum, nem depois do match", () => {
+    const s = scenario({ claimStatus: "aceite", listingStatus: "reservada" })
+    const intruso = addUser(s.db, "cidadao", "Intruso")
+    for (const viewer of [asUser(s.other, "reciclador"), asUser(intruso, "cidadao")]) {
+        const v = visibility.forListing(s.db, s.listing, viewer)
+        // O objeto entregue à vista não pode trazer o telefone do cidadão (dentro
+        // do URL wa.me) a quem não é parte: é o template que o esconde hoje, e
+        // não devia ser o único a fazê-lo.
+        assert.strictEqual(v.waToCitizen, null)
+        assert.strictEqual(v.waToRecycler, null)
+    }
+})

@@ -38,7 +38,8 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 - `server.set("trust proxy", 1)` — needed for `secure` cookies behind Render's proxy.
 - `/uploads/*` is served from `<DATA_DIR>/uploads` (mounted before `public/`).
 - Deploy: `render.yaml` blueprint (free plan; see README for the persistent-disk upgrade).
-- No build / lint. Tests: `node --test`, in `test/`, no test dependencies.
+- No build / lint. Tests: `node --test`, in `test/` (domain modules) and `test/http/`
+  (the whole app over HTTP), no test dependencies.
 - **Seed accounts** (all password `noslixu123`): `admin@noslixu.cv` (admin);
   `reciclador1@noslixu.cv`…`reciclador4@noslixu.cv` (verified recyclers);
   `ana@exemplo.cv`, `joao@exemplo.cv` (citizens).
@@ -47,7 +48,8 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 
 | file | role |
 |---|---|
-| `server.js` | routes only: parse the request, call a domain module, render |
+| `server.js` | the **entrypoint** — the only place that touches the real process: opens the SQLite file, seeds it, builds the app, runs the startup sweeps, installs the crash guards, listens. `npm start`, `render.yaml` and nodemon all run this file |
+| `app.js` | `createApp({ db, sessionSecret, isProd })` — routes only: parse the request, call a domain module, render. Opens nothing, seeds nothing, binds no port. **This is the seam for HTTP tests** |
 | `domain/listings.js` | the anúncio lifecycle: `claim`/`accept`/`withdraw`/`expire`/`conclude`/`sweepExpired` |
 | `domain/visibility.js` | who may see what on an anúncio (the privacy rule) — `forListing(db, id, viewer)` |
 | `domain/match.js` | recycler profile ↔ anúncio matching; owns the CSV storage format |
@@ -58,16 +60,17 @@ npm test      # node:test, no dependencies; tests run against an in-memory SQLit
 | `domain/workshops.js` | admin CRUD for workshops, with validation |
 | `domain/dashboard.js` | operational overview for `/admin` (no kg/CO₂e — that is `impacto`) |
 | `config.js` | resolves `DATA_DIR` → `DB_PATH`, `UPLOADS_DIR`, `LISTINGS_UPLOAD_DIR` |
-| `database/db.js` | opens SQLite at `DB_PATH`, applies the schema, seeds when empty |
+| `database/db.js` | `openDatabase(path)` — opens SQLite (a file, or `":memory:"`) with the schema applied. No singleton export |
+| `database/seed.js` | `seedIfEmpty(db)` — the demo data; only `server.js` calls it |
 | `database/schema.js` | `createSchema(db)` — the CREATE TABLEs, apart from opening the file |
 | `password.js` | `hashPassword` / `verifyPassword` (scrypt, timing-safe) |
-| `auth.js` | `loadUser`, `attachUser`, `requireAuth`, `requireRole(...)`, login throttle |
+| `auth.js` | `createAuth(db)` → `loadUser`, `attachUser`, `requireAuth`, `requireRole(...)` and the login throttle; the throttle's state is per instance |
 | `csrf.js` | `csrfToken` (per-session token → `res.locals`), `verifyCsrf` (checks `_csrf`) |
 | `uploads.js` | `listingPhoto` multer middleware (image-only, ≤3 MB), `publicPath` |
 | `data/praia-zones.js` | Praia zones — dropdowns + validation |
 | `data/materials.js` | material list + `co2ePerKg` factors (indicative) |
 
-Middleware order in `server.js`: `trust proxy` → `/uploads` static → `public`
+Middleware order in `app.js`: `trust proxy` → `/uploads` static → `public`
 static → urlencoded → cookie-session → `attachUser` → `csrfToken` → template
 locals. Multipart routes run `listingPhoto` **before** `verifyCsrf` (so
 `req.body._csrf` is populated).
@@ -129,8 +132,21 @@ must never re-derive it — ask the module.
   with `createSchema`. Keep it that way.
 - Domain operations return `{ ok: true, ... }` or `{ ok: false, status, message }`;
   handlers translate that with `renderFail(res, result)`.
+- **There is no database singleton.** `server.js` opens it and hands it to
+  `createApp`, which hands it on (`createAuth(db)`, the domain modules). Never
+  `require` a database from a module; take `db` as a parameter. Importing
+  `app.js` must stay free of effects (no listen, no seed, no `process.on`) —
+  anything that only makes sense in a running process belongs in `server.js`.
 - Geo values validated against `data/praia-zones.js`; materials against `data/materials.js`.
 - Views extend `layout.html`; interior pages `{% include "partials/nav.html" %}`.
+- **HTTP tests** (`test/http/`) build a fresh app per test with `withApp` from
+  `test/http/client.js`: an in-memory database, a real socket on a free port, a
+  cookie jar, and the CSRF token read from the page like a browser would.
+  Build data with `test/helpers.js` (`addUser(..., { password })` for accounts
+  you can log in as), not with the seed. **Always load the app through
+  `client.js`** — it sets `DATA_DIR` to a temp directory *before* the first
+  require, because `config.js` fixes the uploads path at load time; requiring
+  `src/app` yourself first makes the tests create `./var` in the repo.
 - **Every form uses `class="auth-form"`**, styled once in `public/styles/forms.css`
   — labels, inputs, `fieldset`/`legend`, the `.checklist` grid for checkbox lists,
   focus rings, `.form-errors`. Never write form-specific CSS in another
@@ -183,7 +199,7 @@ must never re-derive it — ask the module.
   integer `6` and the text `"6"` are different values, so anyone who both
   donated and signed up for a workshop would be counted twice.
 - Nunjucks does **not** repeat strings (`"★" * n` is Jinja and yields `NaN`).
-  Stars are drawn with the `estrelas` filter registered in `server.js`.
+  Stars are drawn with the `estrelas` filter registered in `app.js`.
 - `forms.css` was `auth.css` until it was found that four pages
   (`anuncio-novo`, `coleta-confirmar`, `perfil-reciclador`, the claim form on
   `anuncio`) used `class="auth-form"` but never linked the stylesheet that
@@ -200,10 +216,17 @@ must never re-derive it — ask the module.
   so `/impacto` is non-zero out of the box, plus 3 open listings chosen so that
   `reciclador1` and `reciclador2` each match one under the default board filter.
 - Two housekeeping sweeps, both cheap and synchronous, no scheduler:
-  `sweepExpired()` (server.js) marks past-`available_until` open listings
-  `expirada` — runs at startup and at the top of `/painel`, `/anuncios`,
-  `/anuncios/:id`; `sweepOrphans()` (uploads.js) deletes upload files no listing
-  references — runs at startup only.
+  `sweepExpired()` (app.js) marks past-`available_until` open listings
+  `expirada` — runs at the top of `/painel`, `/anuncios`, `/anuncios/:id`, and
+  once at startup (called from `server.js`); `sweepOrphans()` (uploads.js)
+  deletes upload files no listing references — startup only, also `server.js`.
+- **Known and not yet fixed**, both found while building the HTTP tests:
+  (1) `POST /entrar` follows `next=//other-site` — `startsWith("/")` accepts
+  protocol-relative URLs, so a crafted login link redirects off-site after a
+  valid login. It is recorded as a `todo` test in `test/http/session.test.js`
+  and will turn green when fixed. (2) `test/photos.test.js` still creates
+  `./var` (it loads `uploads.js` → `config.js`); it goes away when the
+  uploads directory is injected instead of read from `DATA_DIR` at load time.
 - Multer writes the file before `verifyCsrf` runs. Rather than remembering
   `removeUpload` on every failure path, `POST /anuncios/novo` runs its work
   inside `withStagedPhoto(diskStore, req.file, ...)`, which discards the file
