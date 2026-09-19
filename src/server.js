@@ -24,7 +24,7 @@ const { hashPassword, verifyPassword } = require("./password")
 const {
     attachUser, requireAuth, requireRole,
     loginBlocked, registerFailedLogin, clearLoginAttempts
-} = require("./auth")
+} = require("./auth").createAuth(db)
 const { csrfToken, verifyCsrf } = require("./csrf")
 const { listingPhoto, publicPath, sweepOrphans, withStagedPhoto, diskStore } = require("./uploads")
 
