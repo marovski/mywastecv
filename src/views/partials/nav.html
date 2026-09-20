@@ -5,6 +5,7 @@
     <ul>
         <li><a href="/recicladores" class="{{ 'active' if currentPath.startsWith('/recicladores') }}">Recicladores</a></li>
         <li><a href="/workshops" class="{{ 'active' if currentPath.startsWith('/workshops') }}">Workshops</a></li>
+        <li><a href="/tipos-residuos" class="{{ 'active' if currentPath == '/tipos-residuos' }}">Guia</a></li>
         <li><a href="/impacto" class="{{ 'active' if currentPath == '/impacto' }}">Impacto</a></li>
         <li><a href="/projeto" class="{{ 'active' if currentPath == '/projeto' }}">Projeto</a></li>
         {% if currentUser %}
@@ -12,6 +13,7 @@
                 <li><a href="/admin" class="{{ 'active' if currentPath == '/admin' }}">Admin</a></li>
             {% else %}
                 <li><a href="/painel" class="{{ 'active' if currentPath.startsWith('/painel') or currentPath.startsWith('/anuncios') or currentPath == '/perfil' }}">Painel</a></li>
+                <li><a href="/recompensas" class="{{ 'active' if currentPath == '/recompensas' }}">🎖️ Recompensas</a></li>
             {% endif %}
             <li class="nav-user">
                 <span>{{ currentUser.name }}</span>

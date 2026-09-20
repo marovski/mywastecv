@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-tipos-residuos" %}
+
+{% block title %}<title>Tipos de Resíduos — Nôs Lixu</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/content-page.css">
+    <style>
+        .waste-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .waste-card {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+
+        .waste-card:hover {
+            border-color: #66bb6a;
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .waste-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .waste-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .waste-co2 {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .waste-instructions {
+            margin: 15px 0;
+        }
+
+        .waste-instructions h4 {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #66bb6a;
+            margin-bottom: 8px;
+        }
+
+        .waste-instructions ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .waste-instructions li {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .waste-instructions li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #66bb6a;
+            font-weight: bold;
+        }
+
+        .waste-tips {
+            background: #e8f5e9;
+            border-left: 4px solid #66bb6a;
+            padding: 10px 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #2e7d32;
+            border-radius: 4px;
+        }
+
+        .section-intro {
+            text-align: center;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-intro p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main>
+        <header class="page-head">
+            <h1>Guia de Tipos de Resíduos</h1>
+            <p>Aprenda a separar e reciclar cada tipo de resíduo corretamente.</p>
+        </header>
+
+        <div class="section-intro">
+            <p>
+                Uma correta separação de resíduos é fundamental para o sucesso da reciclagem.
+                Aqui encontra instruções práticas sobre como preparar cada tipo de material
+                para recolha e reciclagem.
+            </p>
+        </div>
+
+        <div class="waste-grid">
+            {% for material in materials %}
+                <div class="waste-card">
+                    <div class="waste-icon">{{ material.icon }}</div>
+                    <div class="waste-title">{{ material.label }}</div>
+                    <div class="waste-co2">💨 {{ material.co2ePerKg }} kg CO₂e por kg reciclado</div>
+
+                    <div class="waste-instructions">
+                        <h4>Como preparar</h4>
+                        <ul>
+                            {% for instruction in material.instructions %}
+                                <li>{{ instruction }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    {% if material.tips %}
+                        <div class="waste-tips">
+                            💡 <strong>Dica:</strong> {{ material.tips }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <section style="margin-top: 50px; padding: 30px; background: #f0f8f5; border-radius: 8px;">
+            <h2 style="color: #2e7d32; margin-bottom: 15px;">Por que reciclar?</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div>
+                    <strong style="display: block; margin-bottom: 5px; color: #66bb6a;">♻️ Economia</strong>
+                    <p>Reduz a necessidade de matérias-primas e poupa energia na produção.</p>
+                </div>
+                <div>
+                    <strong style="display: block; margin-bottom: 5px; color: #66bb6a;">🌍 Ambiente</strong>
+                    <p>Diminui a poluição, a desflorestação e as emissões de carbono.</p>
+                </div>
+                <div>
+                    <strong style="display: block; margin-bottom: 5px; color: #66bb6a;">💼 Emprego</strong>
+                    <p>Cria oportunidades de trabalho na cadeia de reciclagem local.</p>
+                </div>
+                <div>
+                    <strong style="display: block; margin-bottom: 5px; color: #66bb6a;">🏘️ Comunidade</strong>
+                    <p>Envolve a população e promove uma cultura de sustentabilidade.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+{% endblock content %}

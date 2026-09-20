@@ -29,6 +29,7 @@ const admin = require("./domain/admin")
 const adminWorkshops = require("./domain/workshops")
 const dashboard = require("./domain/dashboard")
 const recyclerProfile = require("./domain/profile")
+const rewards = require("./domain/rewards")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -489,7 +490,24 @@ function createApp({ db, sessionSecret, isProd = false }) {
     server.post("/anuncios/:id/concluir", requireAuth, verifyCsrf, (req, res) => {
         try {
             const result = listings.conclude(db, req.params.id, res.locals.currentUser.id, parseWeights(req.body))
-            if (result.ok) return res.redirect(`/anuncios/${req.params.id}`)
+            if (result.ok) {
+                const recyclerId = db.prepare(`
+                    SELECT recycler_id FROM collection_records
+                    WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1
+                `).get(req.params.id)?.recycler_id
+
+                if (recyclerId) {
+                    rewards.initRewardsForUser(db, recyclerId)
+                    const weights = parseWeights(req.body)
+                    let totalKg = 0
+                    for (const kg of Object.values(weights)) {
+                        totalKg += kg
+                    }
+                    const points = Math.round(totalKg * 10)
+                    rewards.addPoints(db, recyclerId, points, "collection", req.params.id)
+                }
+                return res.redirect(`/anuncios/${req.params.id}`)
+            }
 
             // Falta de pesos volta ao formulário; o resto é uma página de erro.
             if (result.status !== 400) return renderFail(res, result)
@@ -696,11 +714,36 @@ function createApp({ db, sessionSecret, isProd = false }) {
     })
 
     // =====================================================================
+    // Guia de Resíduos
+    // =====================================================================
+    server.get("/tipos-residuos", (req, res) => {
+        try {
+            return res.render("tipos-residuos.html", { materials })
+        } catch (err) {
+            return serverError(res, err)
+        }
+    })
+
+    // =====================================================================
     // Impacto
     // =====================================================================
     server.get("/impacto", (req, res) => {
         try {
             return res.render("impacto.html", { metrics: impacto.metrics(db) })
+        } catch (err) {
+            return serverError(res, err)
+        }
+    })
+
+    // =====================================================================
+    // Recompensas
+    // =====================================================================
+    server.get("/recompensas", requireAuth, (req, res) => {
+        try {
+            const user = res.locals.currentUser
+            const userStats = rewards.getUserStats(db, user.id)
+            const leaderboard = rewards.getLeaderboard(db, 20)
+            return res.render("recompensas.html", { userStats, leaderboard })
         } catch (err) {
             return serverError(res, err)
         }

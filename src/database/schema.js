@@ -102,6 +102,23 @@ function createSchema(db) {
         phone       TEXT,
         created_at  TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS user_rewards (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        total_points INTEGER DEFAULT 0,
+        level       INTEGER DEFAULT 1,
+        created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS reward_transactions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        points      INTEGER NOT NULL,
+        type        TEXT NOT NULL,
+        related_id  INTEGER,
+        created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+    );
 `)
 }
 

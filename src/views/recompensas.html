@@ -1,0 +1,349 @@
+{% extends "layout.html" %}
+
+{% set pageId = "page-recompensas" %}
+
+{% block title %}<title>Minhas Recompensas — Nôs Lixu</title>{% endblock title %}
+
+{% block styles %}
+    <link rel="stylesheet" href="/styles/painel.css">
+    <style>
+        .rewards-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .reward-card-main {
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .reward-card-main strong {
+            display: block;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .reward-level {
+            display: inline-block;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+
+        .level-name {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .reward-bar {
+            background: rgba(255,255,255,0.3);
+            border-radius: 8px;
+            height: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .reward-bar-fill {
+            background: white;
+            height: 100%;
+            border-radius: 8px;
+        }
+
+        .badges-section {
+            margin: 40px 0;
+        }
+
+        .badges-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .badge {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .badge:hover {
+            border-color: #66bb6a;
+            box-shadow: 0 2px 8px rgba(102, 187, 106, 0.2);
+        }
+
+        .badge-icon {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .badge-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            word-wrap: break-word;
+        }
+
+        .badge-earned {
+            font-size: 10px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .badge-locked {
+            opacity: 0.4;
+            color: #999;
+        }
+
+        .transactions-section {
+            margin: 40px 0;
+        }
+
+        .transaction-type-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .transaction-type-badge.collection {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .transaction-type-badge.rating {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .leaderboard-section {
+            margin: 40px 0;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .leaderboard-table thead {
+            background: #f5f5f5;
+        }
+
+        .leaderboard-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            background: #66bb6a;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .rank-badge.gold {
+            background: #ffd700;
+            color: #333;
+        }
+
+        .rank-badge.silver {
+            background: #c0c0c0;
+            color: #333;
+        }
+
+        .rank-badge.bronze {
+            background: #cd7f32;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .stat-box {
+            background: #f0f8f5;
+            border-left: 4px solid #66bb6a;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .stat-box strong {
+            display: block;
+            font-size: 24px;
+            color: #66bb6a;
+            margin-bottom: 5px;
+        }
+
+        .stat-box span {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+{% endblock styles %}
+
+{% block content %}
+    {% include "partials/nav.html" %}
+
+    <main class="rewards-container">
+        <h1 style="margin-top: 30px;">Minhas Recompensas</h1>
+
+        <!-- Card Principal -->
+        <div class="reward-card-main">
+            <strong>{{ userStats.rewards.total_points }}</strong>
+            <div class="level-name">Pontos Totais</div>
+
+            <div class="reward-level">
+                {{ userStats.levelBadge }}
+                <div style="font-size: 14px;">{{ userStats.levelName }}</div>
+            </div>
+
+            <div style="margin-top: 15px; font-size: 14px;">
+                Nível {{ userStats.rewards.level }} de 4
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <strong>{{ userStats.rewards.total_points }}</strong>
+                <span>Pontos totais</span>
+            </div>
+            <div class="stat-box">
+                <strong>{{ userStats.rewards.level }}</strong>
+                <span>Nível atual</span>
+            </div>
+            {% for tx in userStats.transactions %}
+                {% if tx.type == 'collection' %}
+                    <div class="stat-box">
+                        <strong>{{ tx.count }}</strong>
+                        <span>Recolhas confirmadas</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Badges Conquistadas -->
+        <div class="badges-section">
+            <h2>🏆 Badges Conquistadas</h2>
+
+            {% if userStats.badges and userStats.badges | length > 0 %}
+                <div class="badges-grid">
+                    {% for badge in userStats.badges %}
+                        <div class="badge">
+                            <div class="badge-icon">{{ badge.emoji or '🎖️' }}</div>
+                            <div class="badge-name">{{ badge.name }}</div>
+                            <div class="badge-earned">{{ badge.earned_at | slice(0, 10) }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #999; font-style: italic;">Sem badges ainda. Continue reciclando!</p>
+            {% endif %}
+        </div>
+
+        <!-- Transações de Pontos -->
+        {% if userStats.transactions and userStats.transactions | length > 0 %}
+            <div class="transactions-section">
+                <h2>📊 Movimentos de Pontos</h2>
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Pontos</th>
+                            <th>Contagem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in userStats.transactions %}
+                            <tr>
+                                <td>
+                                    <span class="transaction-type-badge {{ tx.type }}">
+                                        {% if tx.type == 'collection' %}
+                                            🔄 Recolha
+                                        {% elif tx.type == 'rating' %}
+                                            ⭐ Avaliação
+                                        {% else %}
+                                            📝 {{ tx.type }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td><strong>+{{ tx.total_points }}</strong></td>
+                                <td>{{ tx.count }} evento{{ 's' if tx.count != 1 else '' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        <!-- Leaderboard -->
+        {% if leaderboard and leaderboard | length > 0 %}
+            <div class="leaderboard-section">
+                <h2>🏅 Top Recicladores</h2>
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Nome</th>
+                            <th>Pontos</th>
+                            <th>Recolhas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in leaderboard %}
+                            <tr>
+                                <td>
+                                    {% if loop.index == 1 %}
+                                        <span class="rank-badge gold">🥇</span>
+                                    {% elif loop.index == 2 %}
+                                        <span class="rank-badge silver">🥈</span>
+                                    {% elif loop.index == 3 %}
+                                        <span class="rank-badge bronze">🥉</span>
+                                    {% else %}
+                                        <span class="rank-badge">#{{ loop.index }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ item.name }}</strong></td>
+                                <td>{{ item.total_points }}</td>
+                                <td>{{ item.collections or 0 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 40px; padding: 20px; background: #e8f5e9; border-radius: 8px; text-align: center;">
+            <p>💡 <strong>Dica:</strong> Quanto mais recolhas confirmadas, mais pontos acumula. Explore o <a href="/tipos-residuos" style="color: #2e7d32; text-decoration: none;"><strong>guia de resíduos</strong></a> para aprender como reciclar corretamente!</p>
+        </div>
+    </main>
+{% endblock content %}
