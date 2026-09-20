@@ -13,7 +13,6 @@ const nunjucks = require("nunjucks")
 const { UPLOADS_DIR } = require("./config")
 const zones = require("./data/praia-zones")
 const { materials, labels: itemLabels } = require("./data/materials")
-const { hashPassword, verifyPassword } = require("./password")
 const { createAuth, safeRedirectPath } = require("./auth")
 const { csrfToken, verifyCsrf } = require("./csrf")
 const { listingPhoto, publicPath, withStagedPhoto, diskStore } = require("./uploads")
@@ -29,6 +28,7 @@ const admin = require("./domain/admin")
 const adminWorkshops = require("./domain/workshops")
 const dashboard = require("./domain/dashboard")
 const recyclerProfile = require("./domain/profile")
+const accounts = require("./domain/accounts")
 
 const collaborators = [
     "Quercus Cabo Verde",
@@ -40,10 +40,9 @@ const collaborators = [
 function createApp({ db, sessionSecret, isProd = false }) {
     const server = express()
 
-    const {
-        attachUser, requireAuth, requireRole,
-        loginBlocked, registerFailedLogin, clearLoginAttempts
-    } = createAuth(db)
+    const throttle = accounts.createThrottle()
+
+    const { attachUser, requireAuth, requireRole } = createAuth(db)
 
     // Atrás de um proxy (Render, etc.) para que req.secure / cookies "secure" funcionem.
     server.set("trust proxy", 1)
@@ -157,36 +156,18 @@ function createApp({ db, sessionSecret, isProd = false }) {
     })
 
     server.post("/registar", verifyCsrf, (req, res) => {
-        const { name, email, phone, zone, password, password2 } = req.body
         const role = req.body.role === "reciclador" ? "reciclador" : "cidadao"
 
-        const errors = []
-        if (!name || !name.trim()) errors.push("Indique o seu nome.")
-        if (!email || !/.+@.+\..+/.test(email)) errors.push("Email inválido.")
-        if (!zone || !zones.includes(zone)) errors.push("Selecione uma zona da Praia.")
-        if (!password || password.length < 8) errors.push("A password deve ter pelo menos 8 caracteres.")
-        if (password !== password2) errors.push("As passwords não coincidem.")
-        if (email && db.prepare(`SELECT 1 FROM users WHERE email = ?`).get(email.trim().toLowerCase())) {
-            errors.push("Já existe uma conta com este email.")
-        }
-
-        if (errors.length) {
-            return res.status(400).render("registar.html", { role, errors, values: req.body })
-        }
-
         try {
-            const info = db.prepare(`
-                INSERT INTO users (role, name, email, phone, zone, password_hash)
-                VALUES (?, ?, ?, ?, ?, ?);
-            `).run(role, name.trim(), email.trim().toLowerCase(), phone || null, zone, hashPassword(password))
-
-            if (role === "reciclador") {
-                db.prepare(`INSERT INTO recycler_profiles (user_id, org_name) VALUES (?, ?)`)
-                  .run(info.lastInsertRowid, name.trim())
+            const result = accounts.register(db, req.body)
+            if (!result.ok) {
+                return res.status(result.status).render("registar.html", {
+                    role, errors: result.errors, values: req.body
+                })
             }
 
-            req.session.userId = info.lastInsertRowid
-            return res.redirect(role === "reciclador" ? "/perfil" : "/painel")
+            req.session.userId = result.userId
+            return res.redirect(result.role === "reciclador" ? "/perfil" : "/painel")
         } catch (err) {
             return serverError(res, err)
         }
@@ -201,27 +182,21 @@ function createApp({ db, sessionSecret, isProd = false }) {
         const { email, password } = req.body
         // O `next` vem do utilizador: só um caminho deste site serve de destino.
         const dest = safeRedirectPath(req.body.next)
-        const key = `${req.ip}:${(email || "").toLowerCase()}`
+        const clientKey = `${req.ip}:${(email || "").toLowerCase()}`
 
-        if (loginBlocked(key)) {
-            return res.status(429).render("entrar.html", {
-                next: dest, email, errors: ["Demasiadas tentativas. Aguarde 15 minutos."]
-            })
+        try {
+            const result = accounts.authenticate(db, email, password, throttle, clientKey)
+            if (!result.ok) {
+                return res.status(result.status).render("entrar.html", {
+                    next: dest, email, errors: [result.message]
+                })
+            }
+
+            req.session.userId = result.user.id
+            return res.redirect(dest)
+        } catch (err) {
+            return serverError(res, err)
         }
-
-        const user = email
-            ? db.prepare(`SELECT * FROM users WHERE email = ?`).get(email.trim().toLowerCase())
-            : null
-
-        if (!user || !verifyPassword(password || "", user.password_hash)) {
-            registerFailedLogin(key)
-            // A password nunca volta — só o email, para não ter de o reescrever.
-            return res.status(401).render("entrar.html", { next: dest, email, errors: ["Email ou password incorretos."] })
-        }
-
-        clearLoginAttempts(key)
-        req.session.userId = user.id
-        return res.redirect(dest)
     })
 
     server.post("/sair", verifyCsrf, (req, res) => {
