@@ -1,46 +1,63 @@
-@media(max-width: 900px){
-    #page-home{
+/* Larguras médias (tablet e telemóveis maiores). */
+@media (max-width: 900px) {
+    #page-home {
         background-position-x: 70vw;
     }
-    #page-home .content{
+    #page-home .content {
         align-items: center;
         text-align: center;
     }
-    #page-home header a{
-        position: absolute;
-        bottom: 48px;
-        transform: translateX(-50%);
-        left: 50%;
-    }
-    #page-home main{
+    #page-home main {
         align-items: center;
     }
-    #page-search-results .cards{ /* responsividade da grid */
+    #page-search-results .cards {
         grid-template-columns: 1fr;
-
-        /* object-fit: cover; */ /* comando para mostrar a imagem de uma forma mais dinaminca */
-
-    }
-    /* pagina de cadastro / dados */
-    #page-create-point .field-group{
-        flex-direction: column;
-    }
-    #page-create-point .field-group .field + .field{    /* + .field é para fazer com que o comando seja dado para a proxima div de class field */
-        margin-left: 0px;
-    }
-    /* pagina de cadastro / itens de coleta */
-    .itens-grid{
-        grid-template-columns: 1fr 1fr;
     }
 }
-@media(min-width: 1700px){
-    #page-home{
+
+/* Telemóveis: aperta espaçamento e tipografia de destaque, que a largura
+   normal exagera num ecrã estreito. */
+@media (max-width: 600px) {
+    main {
+        margin: 28px auto;
+    }
+    .page-head h1 {
+        font-size: 30px;
+    }
+    .page-head p {
+        font-size: 16px;
+    }
+
+    #page-home main h1 {
+        font-size: 34px;
+    }
+    #page-home main p {
+        font-size: 18px;
+        line-height: 28px;
+        margin-top: 24px;
+    }
+    #page-home .home-cta a {
+        height: 56px;
+    }
+
+    /* O menu já quebra em várias linhas (flex-wrap); só falta apertar o
+       espaçamento para não parecer disperso quando isso acontece. */
+    .site-nav ul {
+        gap: 12px 20px;
+    }
+
+    #modal .header h1 {
+        font-size: 28px;
+    }
+}
+
+@media (min-width: 1700px) {
+    #page-home {
         background-position-x: 40vw;
+    }
 }
-}
-@media(max-height: 760px){
-    #page-home{
+@media (max-height: 760px) {
+    #page-home {
         background-position-y: 150px;
     }
 }
-    
