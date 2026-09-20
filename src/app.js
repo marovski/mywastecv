@@ -14,7 +14,7 @@ const { UPLOADS_DIR } = require("./config")
 const zones = require("./data/praia-zones")
 const { materials, labels: itemLabels } = require("./data/materials")
 const { hashPassword, verifyPassword } = require("./password")
-const { createAuth } = require("./auth")
+const { createAuth, safeRedirectPath } = require("./auth")
 const { csrfToken, verifyCsrf } = require("./csrf")
 const { listingPhoto, publicPath, withStagedPhoto, diskStore } = require("./uploads")
 
@@ -199,7 +199,8 @@ function createApp({ db, sessionSecret, isProd = false }) {
 
     server.post("/entrar", verifyCsrf, (req, res) => {
         const { email, password } = req.body
-        const dest = typeof req.body.next === "string" && req.body.next.startsWith("/") ? req.body.next : "/painel"
+        // O `next` vem do utilizador: só um caminho deste site serve de destino.
+        const dest = safeRedirectPath(req.body.next)
         const key = `${req.ip}:${(email || "").toLowerCase()}`
 
         if (loginBlocked(key)) {

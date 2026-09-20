@@ -6,6 +6,23 @@
 // partilhem tentativas falhadas.
 const MAX_ATTEMPTS = 5
 const WINDOW_MS = 15 * 60 * 1000
+const MAX_REDIRECT_LENGTH = 2048
+
+// Um destino de redirect que veio do utilizador (o `next` do login) só é
+// aceite se for um caminho DESTE site; qualquer outra coisa cai em `fallback`.
+//
+// "Começa por /" não basta: "//host" e "/\host" são relativos ao protocolo, e o
+// browser segue-os para outro site. E o browser ignora tabs e quebras de linha
+// dentro de um URL, por isso "/<tab>/host" também vira "//host". Daí recusar
+// tudo o que não seja um caminho simples: outra barra logo a seguir à primeira,
+// qualquer barra invertida, e qualquer carácter de controlo.
+function safeRedirectPath(raw, fallback = "/painel") {
+    if (typeof raw !== "string" || raw.length === 0 || raw.length > MAX_REDIRECT_LENGTH) return fallback
+    if (raw[0] !== "/") return fallback
+    if (raw[1] === "/") return fallback
+    if (/[\\\u0000-\u001f\u007f]/.test(raw)) return fallback
+    return raw
+}
 
 function createAuth(db) {
     // --- Utilizador da sessão ------------------------------------------------
@@ -74,4 +91,4 @@ function createAuth(db) {
     }
 }
 
-module.exports = { createAuth }
+module.exports = { createAuth, safeRedirectPath }
