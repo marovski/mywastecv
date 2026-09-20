@@ -124,3 +124,136 @@ test("signupCount: quantas inscrições um workshop tem, antes de o apagar", () 
     db.prepare(`INSERT INTO workshop_signups (workshop_id, name, email) VALUES (?, 'Ana', 'a@t.cv')`).run(id)
     assert.strictEqual(workshops.signupCount(db, id), 1)
 })
+
+test("getWithSpots: devolve um workshop com spotsLeft calculado", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, valid)
+    const w = workshops.getWithSpots(db, id)
+    assert.strictEqual(w.id, id)
+    assert.strictEqual(w.capacity, 25)
+    assert.strictEqual(w.spotsLeft, 25)
+})
+
+test("getWithSpots: spotsLeft respira a capacidade menos as inscrições", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "3" }))
+    db.prepare(`INSERT INTO workshop_signups (workshop_id, name, email) VALUES (?, 'A', 'a@t')`).run(id)
+    db.prepare(`INSERT INTO workshop_signups (workshop_id, name, email) VALUES (?, 'B', 'b@t')`).run(id)
+    const w = workshops.getWithSpots(db, id)
+    assert.strictEqual(w.spotsLeft, 1)
+})
+
+test("getWithSpots: id inexistente devolve null", () => {
+    const db = freshDb()
+    assert.strictEqual(workshops.getWithSpots(db, 9999), null)
+})
+
+test("listUpcoming: devolve workshops com data >= agora", () => {
+    const db = freshDb()
+    const future = "2099-12-25 10:00"
+    const past = "2000-01-01 10:00"
+    const { id: fId } = workshops.create(db, Object.assign({}, valid, { title: "Futuro", date: future }))
+    const { id: pId } = workshops.create(db, Object.assign({}, valid, { title: "Passado", date: past }))
+    const upcoming = workshops.listUpcoming(db)
+    assert(upcoming.some(w => w.id === fId), "futuro deve estar em upcoming")
+    assert(!upcoming.some(w => w.id === pId), "passado não deve estar em upcoming")
+})
+
+test("listPast: devolve workshops com data < agora", () => {
+    const db = freshDb()
+    const future = "2099-12-25 10:00"
+    const past = "2000-01-01 10:00"
+    const { id: fId } = workshops.create(db, Object.assign({}, valid, { title: "Futuro", date: future }))
+    const { id: pId } = workshops.create(db, Object.assign({}, valid, { title: "Passado", date: past }))
+    const past_ = workshops.listPast(db)
+    assert(!past_.some(w => w.id === fId), "futuro não deve estar em past")
+    assert(past_.some(w => w.id === pId), "passado deve estar em past")
+})
+
+test("signup: inscrição válida grava o registo", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "50" }))
+    const result = workshops.signup(db, id, { name: "Maria", email: "m@t.cv", phone: "9876543" }, null)
+    assert.strictEqual(result.ok, true)
+    const signup = db.prepare(`SELECT * FROM workshop_signups WHERE workshop_id = ?`).get(id)
+    assert.strictEqual(signup.name, "Maria")
+    assert.strictEqual(signup.email, "m@t.cv")
+    assert.strictEqual(signup.phone, "9876543")
+})
+
+test("signup: nome é obrigatório", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, valid)
+    const r = workshops.signup(db, id, { name: "   ", email: "m@t.cv" }, null)
+    assert.strictEqual(r.ok, false)
+    assert.strictEqual(r.status, 400)
+    assert.match(errorsOf(r), /nome/i)
+})
+
+test("signup: email válido é obrigatório", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, valid)
+    for (const bad of ["", "semargoba", "user@dominio"]) {
+        const r = workshops.signup(db, id, { name: "Maria", email: bad }, null)
+        assert.strictEqual(r.ok, false, `email=${bad}`)
+        assert.match(errorsOf(r), /email|inválido/i)
+    }
+})
+
+test("signup: recusa se o workshop está lotado", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "1" }))
+    workshops.signup(db, id, { name: "Ana", email: "a@t.cv" }, null)
+    const r = workshops.signup(db, id, { name: "Zé", email: "z@t.cv" }, null)
+    assert.strictEqual(r.ok, false)
+    assert.strictEqual(r.status, 400)
+    assert.match(errorsOf(r), /lotado/i)
+})
+
+test("signup: duplicado por userId para utilizador registado", () => {
+    const db = freshDb()
+    const userId = addUser(db, "cidadao", "User", { email: "u@t.cv", password: "teste" })
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "50" }))
+    const r1 = workshops.signup(db, id, { name: "User", email: "u@t.cv", phone: "123" }, userId)
+    assert.strictEqual(r1.ok, true)
+    const r2 = workshops.signup(db, id, { name: "User", email: "u@t.cv", phone: "123" }, userId)
+    assert.strictEqual(r2.ok, false)
+    assert.strictEqual(r2.status, 400)
+    assert.match(errorsOf(r2), /inscreveu/i)
+})
+
+test("signup: duplicado por email para anónimo", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "50" }))
+    const r1 = workshops.signup(db, id, { name: "Ana", email: "a@t.cv", phone: "123" }, null)
+    assert.strictEqual(r1.ok, true)
+    const r2 = workshops.signup(db, id, { name: "Ana", email: "a@t.cv", phone: "123" }, null)
+    assert.strictEqual(r2.ok, false)
+    assert.match(errorsOf(r2), /inscrito/i)
+})
+
+test("signup: dois utilizadores registados podem ambos inscrever-se no mesmo workshop", () => {
+    const db = freshDb()
+    const u1 = addUser(db, "cidadao", "User1", { email: "u1@t.cv", password: "teste" })
+    const u2 = addUser(db, "cidadao", "User2", { email: "u2@t.cv", password: "teste" })
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "50" }))
+    const r1 = workshops.signup(db, id, { name: "U1", email: "u1@t.cv" }, u1)
+    const r2 = workshops.signup(db, id, { name: "U2", email: "u2@t.cv" }, u2)
+    assert.strictEqual(r1.ok, true)
+    assert.strictEqual(r2.ok, true)
+    assert.strictEqual(workshops.signupCount(db, id), 2)
+})
+
+test("roster: devolve workshops com inscrições e spots agrupadas", () => {
+    const db = freshDb()
+    const { id } = workshops.create(db, Object.assign({}, valid, { capacity: "5" }))
+    for (let i = 0; i < 3; i++) {
+        db.prepare(`INSERT INTO workshop_signups (workshop_id, name, email) VALUES (?, ?, ?)`)
+            .run(id, `Pessoa${i}`, `p${i}@t.cv`)
+    }
+    const [w] = workshops.roster(db)
+    assert.strictEqual(w.id, id)
+    assert.strictEqual(w.signups.length, 3)
+    assert.strictEqual(w.total, 3)
+    assert.strictEqual(w.spotsLeft, 2)
+})

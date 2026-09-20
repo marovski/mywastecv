@@ -2,6 +2,7 @@ const test = require("node:test")
 const assert = require("node:assert")
 const { freshDb, addUser, addProfile, addListing } = require("./helpers")
 const admin = require("../src/domain/admin")
+const workshops = require("../src/domain/workshops")
 
 function addWorkshop(db, title, date, capacity = 30) {
     return db.prepare(`INSERT INTO workshops (title, date, capacity) VALUES (?, ?, ?)`)
@@ -56,12 +57,12 @@ test("verify/revoke: um id que não é reciclador é recusado", () => {
     assert.strictEqual(admin.verify(db, 9999).status, 404)
 })
 
-test("workshopsWithSignups: inscrições agrupadas, com contagem e lugares", () => {
+test("roster: inscrições agrupadas, com contagem e lugares", () => {
     const db = freshDb()
     const w = addWorkshop(db, "Compostagem", "2026-10-05 16:00", 2)
     signUp(db, w, "Ana", "ana@t.cv", { phone: "991" })
     signUp(db, w, "Zé", "ze@t.cv")
-    const [row] = admin.workshopsWithSignups(db)
+    const [row] = workshops.roster(db)
     assert.strictEqual(row.title, "Compostagem")
     assert.strictEqual(row.total, 2)
     assert.strictEqual(row.spotsLeft, 0)
@@ -69,36 +70,36 @@ test("workshopsWithSignups: inscrições agrupadas, com contagem e lugares", () 
     assert.strictEqual(row.signups[0].phone, "991")
 })
 
-test("workshopsWithSignups: um workshop sem inscrições aparece na mesma", () => {
+test("roster: um workshop sem inscrições aparece na mesma", () => {
     const db = freshDb()
     addWorkshop(db, "Vazio", "2026-10-05 16:00", 10)
-    const [row] = admin.workshopsWithSignups(db)
+    const [row] = workshops.roster(db)
     assert.strictEqual(row.total, 0)
     assert.deepStrictEqual(row.signups, [])
     assert.strictEqual(row.spotsLeft, 10)
 })
 
-test("workshopsWithSignups: lugares nunca ficam negativos", () => {
+test("roster: lugares nunca ficam negativos", () => {
     const db = freshDb()
     const w = addWorkshop(db, "Cheio", "2026-10-05 16:00", 1)
     signUp(db, w, "A", "a@t.cv"); signUp(db, w, "B", "b@t.cv")
-    assert.strictEqual(admin.workshopsWithSignups(db)[0].spotsLeft, 0)
+    assert.strictEqual(workshops.roster(db)[0].spotsLeft, 0)
 })
 
-test("workshopsWithSignups: mais recentes primeiro", () => {
+test("roster: mais recentes primeiro", () => {
     const db = freshDb()
     addWorkshop(db, "Antigo", "2020-01-01 10:00")
     addWorkshop(db, "Futuro", "2099-01-01 10:00")
-    assert.deepStrictEqual(admin.workshopsWithSignups(db).map(w => w.title), ["Futuro", "Antigo"])
+    assert.deepStrictEqual(workshops.roster(db).map(w => w.title), ["Futuro", "Antigo"])
 })
 
-test("workshopsWithSignups: distingue inscrição de conta e inscrição anónima", () => {
+test("roster: distingue inscrição de conta e inscrição anónima", () => {
     const db = freshDb()
     const user = addUser(db, "cidadao", "Ana")
     const w = addWorkshop(db, "W", "2026-10-05 16:00")
     signUp(db, w, "Ana", "ana@t.cv", { userId: user })
     signUp(db, w, "Anon", "anon@t.cv")
-    const [row] = admin.workshopsWithSignups(db)
+    const [row] = workshops.roster(db)
     assert.strictEqual(row.signups[0].user_id, user)
     assert.strictEqual(row.signups[1].user_id, null)
 })
