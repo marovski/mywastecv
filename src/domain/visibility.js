@@ -4,6 +4,7 @@
 // reciclador cujo pedido foi aceite. Esta é a única regra de privacidade da
 // plataforma e vive inteira aqui: nenhum handler a volta a decidir.
 const { waLink, messageToRecycler, messageToCitizen } = require("../whatsapp")
+const { loadCollection } = require("./recolha")
 
 // Reciclador cujo pedido foi aceite, ou null enquanto não houver match.
 function acceptedRecyclerId(db, listingId) {
@@ -11,19 +12,6 @@ function acceptedRecyclerId(db, listingId) {
         `SELECT recycler_id FROM claims WHERE listing_id = ? AND status = 'aceite'`
     ).get(listingId)
     return row ? row.recycler_id : null
-}
-
-function loadCollection(db, listingId) {
-    const collection = db.prepare(
-        `SELECT * FROM collection_records WHERE listing_id = ?`
-    ).get(listingId)
-    if (!collection) return null
-    try {
-        collection.weights = JSON.parse(collection.weights_json || "{}")
-    } catch {
-        collection.weights = {}
-    }
-    return collection
 }
 
 // Tudo o que uma página de anúncio precisa de saber sobre este visitante,
