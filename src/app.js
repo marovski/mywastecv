@@ -549,7 +549,7 @@ function createApp({ db, sessionSecret, isProd = false }) {
                 staleAfterDays: dashboard.STALE_AFTER_DAYS,
                 pending: admin.pendingRecyclers(db),
                 verified: admin.verifiedRecyclers(db),
-                workshops: admin.workshopsWithSignups(db),
+                workshops: adminWorkshops.roster(db),
                 moderated: admin.moderatedListings(db)
             })
         } catch (err) {
@@ -637,11 +637,9 @@ function createApp({ db, sessionSecret, isProd = false }) {
     // =====================================================================
     server.get("/workshops", (req, res) => {
         try {
-            const rows = db.prepare(`SELECT * FROM workshops ORDER BY date`).all()
-            const current = now()
             return res.render("workshops.html", {
-                upcoming: rows.filter(w => w.date >= current),
-                past: rows.filter(w => w.date < current)
+                upcoming: adminWorkshops.listUpcoming(db),
+                past: adminWorkshops.listPast(db)
             })
         } catch (err) {
             return serverError(res, err)
@@ -650,12 +648,10 @@ function createApp({ db, sessionSecret, isProd = false }) {
 
     server.get("/workshops/:id", (req, res) => {
         try {
-            const workshop = db.prepare(`SELECT * FROM workshops WHERE id = ?`).get(req.params.id)
+            const workshop = adminWorkshops.getWithSpots(db, req.params.id)
             if (!workshop) return res.status(404).render("error.html", { message: "Workshop não encontrado." })
-            const taken = db.prepare(`SELECT COUNT(*) AS total FROM workshop_signups WHERE workshop_id = ?`).get(workshop.id).total
             return res.render("workshop.html", {
                 workshop,
-                spotsLeft: Math.max(workshop.capacity - taken, 0),
                 saved: req.query.saved === "1"
             })
         } catch (err) {
@@ -665,31 +661,27 @@ function createApp({ db, sessionSecret, isProd = false }) {
 
     server.post("/workshops/:id/inscrever", verifyCsrf, (req, res) => {
         const user = res.locals.currentUser
-        const name = user ? user.name : req.body.name
-        const email = user ? user.email : req.body.email
-        const phone = user ? user.phone : req.body.phone
         try {
-            const workshop = db.prepare(`SELECT * FROM workshops WHERE id = ?`).get(req.params.id)
+            const workshop = adminWorkshops.get(db, req.params.id)
             if (!workshop) return res.status(404).render("error.html", { message: "Workshop não encontrado." })
-            const taken = db.prepare(`SELECT COUNT(*) AS total FROM workshop_signups WHERE workshop_id = ?`).get(workshop.id).total
 
-            const errors = []
-            if (!name || !name.trim()) errors.push("Nome é obrigatório.")
-            if (!email || !/.+@.+\..+/.test(email)) errors.push("Email inválido.")
-            if (taken >= workshop.capacity) errors.push("Este workshop já está lotado.")
+            const fields = {
+                name: user ? user.name : req.body.name,
+                email: user ? user.email : req.body.email,
+                phone: user ? user.phone : req.body.phone
+            }
+            const result = adminWorkshops.signup(db, req.params.id, fields, user ? user.id : null)
 
-            if (errors.length) {
-                return res.status(400).render("workshop.html", {
-                    workshop, spotsLeft: Math.max(workshop.capacity - taken, 0), errors, values: req.body
+            if (!result.ok) {
+                const workshopWithSpots = adminWorkshops.getWithSpots(db, req.params.id)
+                return res.status(result.status).render("workshop.html", {
+                    workshop: workshopWithSpots,
+                    errors: result.errors,
+                    values: req.body
                 })
             }
 
-            db.prepare(`
-                INSERT INTO workshop_signups (workshop_id, user_id, name, email, phone)
-                VALUES (?, ?, ?, ?, ?);
-            `).run(workshop.id, user ? user.id : null, name.trim(), email.trim(), phone || null)
-
-            return res.redirect(`/workshops/${workshop.id}?saved=1`)
+            return res.redirect(`/workshops/${req.params.id}?saved=1`)
         } catch (err) {
             return serverError(res, err)
         }

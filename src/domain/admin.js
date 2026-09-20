@@ -48,29 +48,6 @@ function revoke(db, userId) {
     return { ok: true }
 }
 
-// Workshops com as respetivas inscrições — a única forma de a equipa saber
-// quem aparece. Duas consultas em vez de uma por workshop.
-function workshopsWithSignups(db) {
-    const workshops = db.prepare(`SELECT * FROM workshops ORDER BY date DESC`).all()
-    const signups = db.prepare(`
-        SELECT * FROM workshop_signups ORDER BY workshop_id, created_at, id
-    `).all()
-
-    const byWorkshop = new Map(workshops.map(w => [w.id, []]))
-    for (const signup of signups) {
-        const list = byWorkshop.get(signup.workshop_id)
-        if (list) list.push(signup)
-    }
-
-    return workshops.map(workshop => {
-        const list = byWorkshop.get(workshop.id)
-        return Object.assign({}, workshop, {
-            signups: list,
-            total: list.length,
-            spotsLeft: Math.max(workshop.capacity - list.length, 0)
-        })
-    })
-}
 
 // Anúncios removidos pela equipa, mais recentes primeiro — para se poder
 // restaurar um removido por engano.
@@ -83,4 +60,4 @@ function moderatedListings(db) {
     `).all()
 }
 
-module.exports = { pendingRecyclers, verifiedRecyclers, verify, revoke, workshopsWithSignups, moderatedListings }
+module.exports = { pendingRecyclers, verifiedRecyclers, verify, revoke, moderatedListings }
