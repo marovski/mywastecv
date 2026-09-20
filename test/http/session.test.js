@@ -114,12 +114,49 @@ test("o bloqueio é da aplicação, não do processo: outra instância não o he
     })
 })
 
-test("o destino depois do login não pode sair do site", {
-    todo: "BUG conhecido: '//outro-site' passa o startsWith('/') e redireciona para fora — registado, não corrigido neste PR"
-}, async () => {
+test("o destino depois do login nunca sai do site", async () => {
     await withApp(async (app) => {
         world(app.db)
-        const res = await app.client().post("/entrar", { email: "ana@t.cv", password: PW, next: "//outro-site.example" })
-        assert.ok(!res.location.startsWith("//"), `redirecionou para ${res.location}`)
+        // Cada uma é uma forma de fazer o browser ir a outro sítio depois de um
+        // login válido: "//host" e "/\host" são relativos ao protocolo, e o
+        // browser ignora tabs e quebras de linha dentro de um URL.
+        const hostile = [
+            "//outro-site.example", "///outro-site.example", "/\\outro-site.example",
+            "/\t/outro-site.example", "/\n/outro-site.example",
+            "https://outro-site.example", "javascript:alert(1)", "outro-site.example",
+        ]
+        for (const next of hostile) {
+            const res = await app.client().post("/entrar", { email: "ana@t.cv", password: PW, next })
+            assert.strictEqual(res.status, 302, JSON.stringify(next))
+            assert.strictEqual(res.location, "/painel", `next=${JSON.stringify(next)} redirecionou para ${res.location}`)
+        }
+    })
+})
+
+test("caminhos do próprio site continuam a ser respeitados, com query e fragmento", async () => {
+    await withApp(async (app) => {
+        world(app.db)
+        for (const next of ["/anuncios?todos=1", "/workshops/2?saved=1", "/anuncios/novo"]) {
+            const res = await app.client().post("/entrar", { email: "ana@t.cv", password: PW, next })
+            assert.strictEqual(res.location, next)
+        }
+    })
+})
+
+test("um login falhado não devolve um destino hostil ao formulário", async () => {
+    await withApp(async (app) => {
+        world(app.db)
+        const res = await app.client().post("/entrar", { email: "ana@t.cv", password: "errada", next: "//outro-site.example" })
+        assert.strictEqual(res.status, 401)
+        assert.match(res.body, /<input type="hidden" name="next" value="\/painel">/)
+        assert.ok(!res.body.includes("outro-site"), "o destino hostil não pode voltar no HTML")
+    })
+})
+
+test("um destino repetido (next=a&next=b) não é aceite como caminho", async () => {
+    await withApp(async (app) => {
+        world(app.db)
+        const res = await app.client().post("/entrar", { email: "ana@t.cv", password: PW, next: ["/anuncios", "//outro-site.example"] })
+        assert.strictEqual(res.location, "/painel")
     })
 })

@@ -220,13 +220,16 @@ must never re-derive it — ask the module.
   `expirada` — runs at the top of `/painel`, `/anuncios`, `/anuncios/:id`, and
   once at startup (called from `server.js`); `sweepOrphans()` (uploads.js)
   deletes upload files no listing references — startup only, also `server.js`.
-- **Known and not yet fixed**, both found while building the HTTP tests:
-  (1) `POST /entrar` follows `next=//other-site` — `startsWith("/")` accepts
-  protocol-relative URLs, so a crafted login link redirects off-site after a
-  valid login. It is recorded as a `todo` test in `test/http/session.test.js`
-  and will turn green when fixed. (2) `test/photos.test.js` still creates
-  `./var` (it loads `uploads.js` → `config.js`); it goes away when the
-  uploads directory is injected instead of read from `DATA_DIR` at load time.
+- **Known and not yet fixed**: `test/photos.test.js` still creates `./var` (it
+  loads `uploads.js` → `config.js`); it goes away when the uploads directory is
+  injected instead of read from `DATA_DIR` at load time.
+- **Redirect targets that come from the user go through `safeRedirectPath`
+  (`auth.js`)** — today that is only the login's `next`. `startsWith("/")` is
+  not enough: `//host` and `/\host` are protocol-relative and the browser
+  follows them off-site, and browsers ignore tabs/newlines inside a URL, so
+  `/<tab>/host` is `//host` too. This was a real open redirect after a valid
+  login until it was fixed; the function refuses anything that is not a plain
+  same-site path. Redirects built from constants or `/anuncios/${id}` are fine.
 - Multer writes the file before `verifyCsrf` runs. Rather than remembering
   `removeUpload` on every failure path, `POST /anuncios/novo` runs its work
   inside `withStagedPhoto(diskStore, req.file, ...)`, which discards the file
