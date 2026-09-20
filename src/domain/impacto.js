@@ -1,18 +1,9 @@
 // Números do painel público de impacto, calculados a partir das recolhas
 // confirmadas e dos workshops realizados.
-const { co2eByLabel } = require("../data/materials")
+const { parseWeights, totalCo2e, flows: flowLabels } = require("./recolha")
 
 function now() {
     return new Date().toISOString().slice(0, 16).replace("T", " ")
-}
-
-function parseWeights(json) {
-    try {
-        const parsed = JSON.parse(json || "{}")
-        return parsed && typeof parsed === "object" ? parsed : {}
-    } catch {
-        return {}
-    }
 }
 
 function metrics(db) {
@@ -41,11 +32,12 @@ function metrics(db) {
     let kg = 0
     let co2e = 0
     for (const record of db.prepare(`SELECT recycler_id, weights_json FROM collection_records`).all()) {
-        for (const [label, amount] of Object.entries(parseWeights(record.weights_json))) {
+        const weights = parseWeights(record.weights_json)
+        for (const [label, amount] of Object.entries(weights)) {
             flows.add(`${record.recycler_id}:${label}`)
             kg += amount
-            co2e += amount * (co2eByLabel[label] || 0)
         }
+        co2e += totalCo2e(record.weights_json)
     }
 
     return {

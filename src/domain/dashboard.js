@@ -1,6 +1,7 @@
 // Estado operacional da plataforma, para a equipa ver o que precisa de
 // atenção. Deliberadamente não repete o /impacto: aqui não há kg nem CO2e,
 // só o que está parado ou à espera de alguém.
+const { totalKg } = require("./recolha")
 const STATUSES = ["aberta", "reservada", "recolhida", "expirada"]
 const STALE_AFTER_DAYS = 14
 const RECENT_LIMIT = 8
@@ -41,17 +42,6 @@ function staleOpenListings(db, days = STALE_AFTER_DAYS) {
           AND NOT EXISTS (SELECT 1 FROM claims c WHERE c.listing_id = l.id)
         ORDER BY days_open DESC, l.id
     `).all(days)
-}
-
-function totalKg(weightsJson) {
-    let weights
-    try {
-        weights = JSON.parse(weightsJson || "{}")
-    } catch {
-        return 0
-    }
-    if (!weights || typeof weights !== "object") return 0
-    return Object.values(weights).reduce((sum, kg) => sum + (Number(kg) || 0), 0)
 }
 
 // Últimas recolhas confirmadas, para se ver que a plataforma está viva.
